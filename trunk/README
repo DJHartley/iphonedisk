@@ -1,0 +1,19 @@
+The provided shell script makes it easy to run.  Your iPhone should be connected and iTunes should be closed.  NOTE: There are currently some bugs in the filesystem plugin that make it not cooperate well with the Finder.
+
+$ ./mount.sh 
+Waiting for phone... established.
+Mounting iPhone Volume...
+$ ls -l /Volumes/iPhone/
+total 0
+drwxrwxrwx   2 root  wheel  0 Dec 31  1969 DCIM
+-rw-rw-rw-   1 root  wheel  0 Dec 31  1969 com.apple.itunes.lock_sync
+drwxrwxrwx   2 root  wheel  0 Dec 31  1969 iTunes_Control
+$ echo hello > /Volumes/iPhone/foo
+$ ls -l /Volumes/iPhone/
+total 2
+drwxrwxrwx   2 root  wheel  0 Dec 31  1969 DCIM
+-rw-rw-rw-   1 root  wheel  0 Dec 31  1969 com.apple.itunes.lock_sync
+-rw-r--r--   1 root  wheel  6 Dec 31  1969 foo
+drwxrwxrwx   2 root  wheel  0 Dec 31  1969 iTunes_Control
+$ cat /Volumes/iPhone/foo
+hello
