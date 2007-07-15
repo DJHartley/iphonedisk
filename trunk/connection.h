@@ -24,6 +24,8 @@ class Connection {
 
   virtual bool IsFile(const std::string& path) = 0;
 
+  virtual int GetFileSize(const std::string& path) = 0;
+
   virtual bool Unlink(const std::string& path) = 0;
 
   virtual bool Mkdir(const std::string& path) = 0;

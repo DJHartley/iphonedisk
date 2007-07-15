@@ -1,11 +1,15 @@
-The provided shell script makes it easy to run.  Your iPhone should be
+iPhoneDisk is a MacFUSE filesystem for reading data from your iPhone.  It
+uses the AFC library, largely documented by the iPhone-dev people (yay!).
+
+REQUIREMENTS: You must have MacFUSE installed. See
+http://code.google.com/p/macfuse/ for more details on MacFUSE.
+
+The provided shell script makes it easy to mount.  Your iPhone should be
 connected, but not connected in iTunes.
 
 NOTE: There are currently some bugs in the filesystem plugin that make it not
 cooperate well when copying files using the Finder interface.  Stick to the
 command prompt for now.
-
-REQUIREMENTS: You must have MacFUSE already installed
 
 $ ./mount.sh 
 Waiting for phone... established.

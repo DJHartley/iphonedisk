@@ -96,6 +96,29 @@ class ConnectionImpl : public Connection {
     return (0 == AFCFileInfoOpen(hAFC_, path.c_str(), &info));
   }
 
+  virtual int GetFileSize(const string& path) {
+    struct afc_dictionary *info;
+    if (AFCFileInfoOpen(hAFC_, path.c_str(), &info)) {
+      return -1;
+    }
+
+    unsigned int size;
+    char *key, *val;
+    while (1) {
+        AFCKeyValueRead(info, &key, &val);
+        if (!key || !val)
+            break;
+
+        if (!strcmp(key, "st_size")) {
+            sscanf(val, "%u", &size);
+            AFCKeyValueClose(info);
+            return size;
+        }
+    }
+    AFCKeyValueClose(info);
+    return -1;
+  }
+
   static const unsigned int kReadBlockSize = 5 * 1024;
 
   virtual bool ReadFileToString(const string& path, string* data) {
@@ -106,17 +129,17 @@ class ConnectionImpl : public Connection {
       return false;
     }
     data->clear();
-    unsigned int size;
-    do {
-      char buf[kReadBlockSize];
-      size = kReadBlockSize;
-      ret = AFCFileRefRead(hAFC_, rAFC, buf, &size);
-      if (ret != 0) {
-        cout << "Problem with AFCFileRefWrite: " << ret << endl;
-        return false;
-      }
-      data->append(buf, size);
-    } while (size == kReadBlockSize);
+    unsigned int size = GetFileSize(path);
+    char* buf = (char*)malloc(size);
+    ret = AFCFileRefRead(hAFC_, rAFC, buf, &size);
+    if (ret != 0) {
+      AFCFileRefClose(hAFC_, rAFC);
+      free(buf);
+      cout << "Problem with AFCFileRefWrite: " << ret << endl;
+      return false;
+    }
+    data->append(buf, size);
+    free(buf);
     AFCFileRefClose(hAFC_, rAFC);
     return true;
   }

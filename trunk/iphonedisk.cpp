@@ -6,7 +6,6 @@
 //
 // http://www.thebends.org/~allen/code/iPhoneDisk
 //
-// TODO: Stat files instead of reading them entirely
 // TODO: Address bug that makes coping files in the finder not work correctly
 
 #include <map>
@@ -30,11 +29,10 @@ static int iphone_getattr(const char* path, struct stat *stbuf) {
   if (strcmp(path, "/") == 0 || conn->IsDirectory(path)) {
     stbuf->st_mode = S_IFDIR | 0777;
     stbuf->st_nlink = 2;
-  } else if (conn->IsFile(path) &&
-             conn->ReadFileToString(path, &data)) { // TODO: slow for big files!
+  } else if (conn->IsFile(path)) {
     stbuf->st_mode = S_IFREG | 0666;
     stbuf->st_nlink = 1;
-    stbuf->st_size = data.size();
+    stbuf->st_size = conn->GetFileSize(path);
   } else {
     res = -ENOENT; 
   }
