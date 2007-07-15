@@ -1,4 +1,11 @@
-The provided shell script makes it easy to run.  Your iPhone should be connected and iTunes should be closed.  NOTE: There are currently some bugs in the filesystem plugin that make it not cooperate well with the Finder.
+The provided shell script makes it easy to run.  Your iPhone should be
+connected, but not connected in iTunes.
+
+NOTE: There are currently some bugs in the filesystem plugin that make it not
+cooperate well when copying files using the Finder interface.  Stick to the
+command prompt for now.
+
+REQUIREMENTS: You must have MacFUSE already installed
 
 $ ./mount.sh 
 Waiting for phone... established.
