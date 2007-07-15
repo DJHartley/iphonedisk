@@ -1,5 +1,6 @@
-iPhoneDisk is a MacFUSE filesystem for reading data from your iPhone.  It
-uses the AFC library, largely documented by the iPhone-dev people (yay!).
+iPhoneDisk is a MacFUSE filesystem for reading and writing data on your iPhone.
+It uses the AFC commands built into the MobileDevice library, largely
+documented by the iPhone-dev people (yay!).
 
 REQUIREMENTS: You must have MacFUSE installed. See
 http://code.google.com/p/macfuse/ for more details on MacFUSE.
