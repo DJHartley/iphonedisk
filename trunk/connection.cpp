@@ -14,10 +14,10 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <Common/MobileDevice.h>  // from iPhoneInterface
 #include <ythread/condvar.h>
 #include <ythread/mutex.h>
 #include <ythread/thread.h>
+#include "MobileDevice.h"  // from iPhoneInterface
 
 #if !defined(WIN32)
 #define __cdecl
