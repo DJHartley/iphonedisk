@@ -14,9 +14,9 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <ythread/condvar.h>
-#include <ythread/mutex.h>
-#include <ythread/thread.h>
+#include "ythread/condvar.h"
+#include "ythread/mutex.h"
+#include "ythread/thread.h"
 #include "MobileDevice.h"  // from iPhoneInterface
 
 #if !defined(WIN32)
