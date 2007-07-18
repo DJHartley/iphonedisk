@@ -33,7 +33,6 @@ static ythread::Mutex mutex_;
 static ythread::CondVar* condvar_;
 static bool connected_;
 static am_device *iPhone_;
-static cmdsend wsendCommandToDevice_;
 static afc_connection *hAFC_;
 
 // This class is kind of a hack, in that it assumes that there is only ever
@@ -44,7 +43,6 @@ class ConnectionImpl : public Connection {
     condvar_ = new ythread::CondVar(&mutex_);
     connected_ = false;
     iPhone_ = NULL;
-    wsendCommandToDevice_ = NULL;
   }
 
   virtual void WaitUntilConnected() {
@@ -107,7 +105,6 @@ class ConnectionImpl : public Connection {
       return false;
     }
 
-    unsigned int ui;
     char *key, *val;
     while (1) {
       AFCKeyValueRead(info, &key, &val);
@@ -115,22 +112,58 @@ class ConnectionImpl : public Connection {
         break;
 
       if (!strcmp(key, "st_size")) {
-        sscanf(val, "%u", &ui);
-        stbuf->st_size = ui;
+        stbuf->st_size = atoll(val);
       } else if (!strcmp(key, "st_blocks")) {
-        sscanf(val, "%u", &ui);
-        stbuf->st_blocks = ui;
+        stbuf->st_blocks = atoll(val);
       } else if (!strcmp(key, "st_ifmt")) {
         if (!strcmp(val, "S_IFDIR")) {
           stbuf->st_mode = S_IFDIR | 0777;
           stbuf->st_nlink = 2;
-        } else {
+        } else if (!strcmp(val, "S_IFREG")) {
           stbuf->st_mode = S_IFREG | 0666;
           stbuf->st_nlink = 1;
+        } else {
+          cout << "Unhandled file type:" << val;
         }
+      } else {
+        cout << "Unhandled stat value:" << key << "|" << val;
       }
     }
     AFCKeyValueClose(info);
+    return true;
+  }
+
+  virtual bool GetStatFs(struct statvfs* stbuf) {
+    memset(stbuf, 0, sizeof(struct statvfs));
+    struct afc_dictionary *info;
+    if (AFCDeviceInfoOpen(hAFC_, &info) != 0) {
+      cout << "AFCDeviceInfo failed" << endl;
+      return false;
+    }
+    // TODO: Write a function for converting an afc_dictionary into a map
+    char *key, *val;
+    while (1) {
+      AFCKeyValueRead(info, &key, &val);
+      if (!key || !val)
+        break;
+      cout << "Key=" << key << ",val=" << val << endl;
+      if (!strcmp(key, "FSTotalBytes")) {
+        stbuf->f_blocks = atoll(val) / 4096;
+      } else if (!strcmp(key, "FSFreeBytes")) {
+// TODO: Adjust after FSBlockSize has been parsed, for now its just
+// hard coded to 4096 which is the value of FSBlockSize below
+        stbuf->f_bfree = stbuf->f_bavail = atoll(val) / 4096;
+      } else if (!strcmp(key, "FSBlockSize")) {
+        stbuf->f_frsize = stbuf->f_bsize = atol(val);
+      } else if (!strcmp(key, "Model")) {
+        // ignore
+      } else {
+        cout << "Unhandled statfs value: " << key << "|" << val;
+      }
+    }
+    // Fill in some arbitrary values here
+    stbuf->f_namemax = 255;
+    stbuf->f_files = stbuf->f_ffree = 1000000000;
     return true;
   }
 
@@ -215,14 +248,6 @@ class ConnectionImpl : public Connection {
     if (handle == 0) {
       cout << "Error during dlopen: " << dlerror() << endl;
       exit(EXIT_FAILURE);
-    }
-    void* knownSymbol = dlsym(handle, "_AMSGetErrorReasonForErrorCode");
-    if(knownSymbol == 0) {
-      cout << "Error looking up global symbolduring dlsym: " << dlerror()
-           << endl;
-      exit(EXIT_FAILURE);
-    } else {
-      wsendCommandToDevice_ = (cmdsend)((char*)knownSymbol + 0xC0E2);
     }
     ret = AMDeviceNotificationSubscribe(device_notification_callback, 0, 0, 0,
                                          &notif);

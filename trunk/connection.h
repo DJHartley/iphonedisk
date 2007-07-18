@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 
 namespace iphonedisk {
 
@@ -26,6 +27,8 @@ class Connection {
   virtual int GetFileSize(const std::string& path) = 0;
   virtual bool IsDirectory(const std::string& path) = 0;
   virtual bool IsFile(const std::string& path) = 0;
+
+  virtual bool GetStatFs(struct statvfs* stbuf) = 0;
 
   virtual bool Unlink(const std::string& path) = 0;
 

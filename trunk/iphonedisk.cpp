@@ -8,6 +8,7 @@
 // http://www.thebends.org/~allen/code/iPhoneDisk
 //
 // TODO: Address bug that makes coping files in the finder not work correctly
+// TODO: Investigate AFCRenamePath
 
 #include <map>
 #include <iostream>
@@ -73,6 +74,7 @@ static int iphone_write(const char *path, const char *buf, size_t size,
   return conn->WriteFile(path, buf, size, offset) ? size : -ENOENT;
 }
 
+// TODO: Can AFCFileRefSetFileSize be used instead?
 static int iphone_truncate(const char* path, off_t offset) {
   cout << "truncate: " << path << endl;
   string data;
@@ -101,19 +103,9 @@ static int iphone_create(const char *path, mode_t mode,
   return 0;
 }
 
-// TODO: Get more accurate file system information
 static int iphone_statfs(const char* path, struct statvfs* vfs) {
   cout << "statfs: " << path << endl;
-  memset(vfs, 0, sizeof(struct statvfs));
-
-  vfs->f_namemax = 255;
-  vfs->f_bsize = 1024;
-  vfs->f_frsize = vfs->f_bsize;
-  vfs->f_frsize = vfs->f_bsize;
-  vfs->f_blocks = vfs->f_bfree = vfs->f_bavail =
-          1000ULL * 1024 * 1024 * 1024 / vfs->f_frsize;
-  vfs->f_files = vfs->f_ffree = 1000000000;
-  return 0;
+  return conn->GetStatFs(vfs) ? 0 : -ENOENT;
 }
 
 static struct fuse_operations iphone_oper;

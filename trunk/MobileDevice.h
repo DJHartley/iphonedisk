@@ -145,10 +145,6 @@ struct afc_connection {
     unsigned int context;           /* 40 */
 } __attribute__ ((packed));
 
-struct afc_device_info {
-    unsigned char unknown[12];  /* 0 */
-} __attribute__ ((packed));
-
 struct afc_directory {
     unsigned char unknown[0];   /* size unknown */
 } __attribute__ ((packed));
@@ -287,7 +283,7 @@ afc_error_t AFCConnectionOpen(afc_connection *handle, unsigned int io_timeout,
 
 /* Pass in a pointer to an afc_device_info structure. It will be filled. */
 afc_error_t AFCDeviceInfoOpen(struct afc_connection *conn, struct
-    afc_device_info **info);
+    afc_dictionary **info);
 
 /* Turns debug mode on if the environment variable AFCDEBUG is set to a numeric
  * value, or if the file '/AFCDEBUG' is present and contains a value. */
