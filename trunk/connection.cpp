@@ -1,5 +1,6 @@
 // connection.h
-// Author: Allen Porter <allen@thebends.org> (pin)
+// Author: Allen Porter <allen@thebends.org> 
+// Contributions: Scott Turner
 // Much code in this module was based on the iPhoneInterface tool by:
 //   geohot, ixtli, nightwatch, warren, nail, Operator
 // See http://iphone.fiveforty.net/wiki/
@@ -54,15 +55,6 @@ class ConnectionImpl : public Connection {
     mutex_.Unlock();
   }
 
-  virtual bool IsDirectory(const string& path) {
-    afc_directory *hAFCDir;
-    if (0 == AFCDirectoryOpen(hAFC_, path.c_str(), &hAFCDir)) {
-      AFCDirectoryClose(hAFC_, hAFCDir);
-      return true;
-    }
-    return false;
-  }
-
   virtual bool Unlink(const string& path) {
     return (0 == AFCRemovePath(hAFC_, path.c_str()));
   }
@@ -89,70 +81,117 @@ class ConnectionImpl : public Connection {
     }
   }
 
-  // TODO: See if the returned dictionary can be used to "stat" he file,
-  // instead of reading it all
+  virtual bool IsDirectory(const string& path) {
+    struct stat stbuf;
+    return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFDIR) != 0);
+  }
+
   virtual bool IsFile(const string& path) {
-    afc_dictionary* info;
-    return (0 == AFCFileInfoOpen(hAFC_, path.c_str(), &info));
+    struct stat stbuf;
+    return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFREG) != 0);
   }
 
   virtual int GetFileSize(const string& path) {
-    struct afc_dictionary *info;
-    if (AFCFileInfoOpen(hAFC_, path.c_str(), &info)) {
+    struct stat stbuf;
+    if (!GetAttr(path, &stbuf)) {
       return -1;
     }
-
-    unsigned int size;
-    char *key, *val;
-    while (1) {
-        AFCKeyValueRead(info, &key, &val);
-        if (!key || !val)
-            break;
-
-        if (!strcmp(key, "st_size")) {
-            sscanf(val, "%u", &size);
-            AFCKeyValueClose(info);
-            return size;
-        }
-    }
-    AFCKeyValueClose(info);
-    return -1;
+    return stbuf.st_size;
   }
 
-  static const unsigned int kReadBlockSize = 5 * 1024;
+  virtual bool GetAttr(const string& path, struct stat* stbuf) {
+    memset(stbuf, 0, sizeof(struct stat));
 
-  virtual bool ReadFileToString(const string& path, string* data) {
+    struct afc_dictionary *info;
+    if (AFCFileInfoOpen(hAFC_, path.c_str(), &info)) {
+      return false;
+    }
+
+    unsigned int ui;
+    char *key, *val;
+    while (1) {
+      AFCKeyValueRead(info, &key, &val);
+      if (!key || !val)
+        break;
+
+      if (!strcmp(key, "st_size")) {
+        sscanf(val, "%u", &ui);
+        stbuf->st_size = ui;
+      } else if (!strcmp(key, "st_blocks")) {
+        sscanf(val, "%u", &ui);
+        stbuf->st_blocks = ui;
+      } else if (!strcmp(key, "st_ifmt")) {
+        if (!strcmp(val, "S_IFDIR")) {
+          stbuf->st_mode = S_IFDIR | 0777;
+          stbuf->st_nlink = 2;
+        } else {
+          stbuf->st_mode = S_IFREG | 0666;
+          stbuf->st_nlink = 1;
+        }
+      }
+    }
+    AFCKeyValueClose(info);
+    return true;
+  }
+
+  virtual bool ReadFile(const string& path, char* data,
+                        size_t size, off_t offset) {
     afc_file_ref rAFC;
     int ret = AFCFileRefOpen(hAFC_, path.c_str(), 2, &rAFC);
     if (ret != 0) {
       cout << "Problem with AFCFileRefOpen(2): " << ret << endl;
       return false;
     }
+
+    ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
+    if (ret != 0) {
+      cout << "Problem with AFCFileRefSeek(): " << ret << endl;
+      return false;
+    }
+
+    unsigned int afcSize = size;
+    ret = AFCFileRefRead(hAFC_, rAFC, data, &afcSize);
+    AFCFileRefClose(hAFC_, rAFC);
+    if (ret != 0) {
+      cout << "Problem with AFCFileRefWrite: " << ret << endl;
+      return false;
+    }
+    return true;
+  }
+
+  virtual bool ReadFileToString(const string& path, string* data) {
     data->clear();
     unsigned int size = GetFileSize(path);
+    if (size < 0) {
+      return false;
+    }
+    // NOTE: Lets hope the file size doesn't change out from under us
     char* buf = (char*)malloc(size);
-    ret = AFCFileRefRead(hAFC_, rAFC, buf, &size);
-    if (ret != 0) {
-      AFCFileRefClose(hAFC_, rAFC);
+    if (!ReadFile(path, buf, size, 0)) {
       free(buf);
-      cout << "Problem with AFCFileRefWrite: " << ret << endl;
       return false;
     }
     data->append(buf, size);
     free(buf);
-    AFCFileRefClose(hAFC_, rAFC);
-    return true;
+    return true;   
   }
 
-  virtual bool WriteStringToFile(const string& path, const string& data) {
+  virtual bool WriteFile(const string& path, const char* data,
+			 size_t size, off_t offset) {
     afc_file_ref rAFC;
     int ret = AFCFileRefOpen(hAFC_, path.c_str(), 3, &rAFC);
     if (ret != 0) {
       cout << "Problem with AFCFileRefOpen(3): " << ret << endl;
       return false;
     }
-    if (data.size() > 0) {
-      ret = AFCFileRefWrite(hAFC_, rAFC, data.data(), data.size());
+    if (size > 0) {
+      ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
+      if (ret != 0) {
+        AFCFileRefClose(hAFC_, rAFC);
+        cout << "Problem with AFCFileRefSeek: " << ret << endl;
+        return false;
+      }
+      ret = AFCFileRefWrite(hAFC_, rAFC, data, (unsigned long)size);
       if (ret != 0) {
         AFCFileRefClose(hAFC_, rAFC);
         cout << "Problem with AFCFileRefWrite: " << ret << endl;
@@ -161,6 +200,10 @@ class ConnectionImpl : public Connection {
     }
     AFCFileRefClose(hAFC_, rAFC);
     return true;
+  }
+
+  virtual bool WriteStringToFile(const string& path, const string& data) {
+    return WriteFile(path, data.c_str(), data.size(), 0);
   }
 
   void Start() {

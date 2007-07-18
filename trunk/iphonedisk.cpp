@@ -1,5 +1,6 @@
 // iphonedisk.c
-// Author: Allen Porter <allen@thebends.org> (pin)
+// Author: Allen Porter <allen@thebends.org> 
+// Contributions: Scott Turner
 //
 // A MacFUSE filesystem implementation for the iPhone.
 // WARNING: Use at your own risk.
@@ -19,28 +20,9 @@ using namespace std;
 
 static iphonedisk::Connection* conn;
 
-static map<string, mode_t> mode_map_;
-
 static int iphone_getattr(const char* path, struct stat *stbuf) {
   cout << "getattr: " << path << endl;
-  int res = 0;
-  memset(stbuf, 0, sizeof(struct stat));
-  string data;
-  if (strcmp(path, "/") == 0 || conn->IsDirectory(path)) {
-    stbuf->st_mode = S_IFDIR | 0777;
-    stbuf->st_nlink = 2;
-  } else if (conn->IsFile(path)) {
-    stbuf->st_mode = S_IFREG | 0666;
-    stbuf->st_nlink = 1;
-    stbuf->st_size = conn->GetFileSize(path);
-  } else {
-    res = -ENOENT; 
-  }
-  map<string, mode_t>::const_iterator it = mode_map_.find(path);
-  if (res == 0 && it != mode_map_.end()) {
-    stbuf->st_mode = it->second;
-  }
-  return res;
+  return conn->GetAttr(path, stbuf) ? 0 : -ENOENT;
 }
 
 static int iphone_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
@@ -49,14 +31,13 @@ static int iphone_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     (void) offset;
     (void) fi;
 
-    if (strcmp(path, "/") != 0 && !conn->IsDirectory(path))
+    if (!conn->IsDirectory(path))
         return -ENOENT;
 
     vector<string> files;
     conn->ListFiles(path, &files);
     for (vector<string>::const_iterator it = files.begin(); it != files.end();
          ++it) {
-      cout << "  :: " << *it;
       filler(buf, it->c_str(), NULL, 0);
     }
     return 0;
@@ -69,53 +50,27 @@ static int iphone_open(const char *path, struct fuse_file_info *fi) {
 
 static int iphone_unlink(const char* path) {
   cout << "unlink: " << path << endl;
-  mode_map_.erase(path);
   return conn->Unlink(path) ? 0 : -ENOENT;
 } 
 
 static int iphone_mkdir(const char* path, mode_t mode) {
   cout << "mkdir: " << path << endl;
-  mode_map_[path] = mode;
   (void)mode;
   return conn->Mkdir(path) ? 0 : -ENOENT;
 }
 
 static int iphone_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi) {
-    cout << "read: " << path << endl;
-    size_t len;
-    (void) fi;
-    string data;
-    if (!conn->ReadFileToString(path, &data))
-        return -ENOENT;
-
-    len = data.size();
-    if (offset < len) {
-        if (offset + size > len)
-            size = len - offset;
-        memcpy(buf, data.data() + offset, size);
-    } else {
-        size = 0;
-    }
-    cout << "[*] read " << size << " bytes";
-    return size;
+  cout << "read: " << path << endl;
+  (void) fi;
+  return conn->ReadFile(path, buf, size, offset) ? size : -ENOENT;
 }
 
 static int iphone_write(const char *path, const char *buf, size_t size,
                         off_t offset, struct fuse_file_info *fi) {
   cout << "write: " << path << endl;
   (void) fi;
-  // TODO: fuse will write in small chunks, so this is REALLY slow
-  string data;
-  if (!conn->ReadFileToString(path, &data)) {
-      return -ENOENT;
-  }
-  data.replace(offset, size, buf, size);
-  if (!conn->WriteStringToFile(path, data)) {
-    return -ENOENT;
-  }
-  cout << "[*] wrote " << size << " bytes (" << data.size() << ")";
-  return size;
+  return conn->WriteFile(path, buf, size, offset) ? size : -ENOENT;
 }
 
 static int iphone_truncate(const char* path, off_t offset) {
@@ -143,10 +98,10 @@ static int iphone_create(const char *path, mode_t mode,
   if (!conn->WriteStringToFile(path, "")) {
     return -ENOENT;
   }
-  mode_map_[path] = mode;
   return 0;
 }
 
+// TODO: Get more accurate file system information
 static int iphone_statfs(const char* path, struct statvfs* vfs) {
   cout << "statfs: " << path << endl;
   memset(vfs, 0, sizeof(struct statvfs));

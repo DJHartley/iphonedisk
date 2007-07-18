@@ -1,0 +1,10 @@
+CHANGELOG
+
+2007/07/17 - allen
+- Multiple improvements by Scott Turner:
+ - Added AFCFileRefSeek() to MobileDevice.h
+ - Significant improvements to file reading and writing throughput
+ - More accurate file stat implementation
+
+2007/07/14 - allen
+- Initial Release, many TODOs

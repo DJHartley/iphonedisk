@@ -3,6 +3,7 @@
  *   $LastChangedDate: 2007-07-09 18:59:29 -0700 (Mon, 09 Jul 2007) $
  *
  * Copied from http://iphonesvn.halifrag.com/svn/iPhone/
+ * With modifications from Allen Porter and Scott Turner
  *
  * ------------------------------------------------------------------------- */
 
@@ -393,6 +394,8 @@ CFMutableDictionaryRef AMRestoreCreateDefaultOptions(CFAllocatorRef allocator);
 /* mode 2 = read, mode 3 = write */
 afc_error_t AFCFileRefOpen(struct afc_connection *conn, const char *path,
     unsigned long long mode, afc_file_ref *ref);
+afc_error_t AFCFileRefSeek(struct afc_connection *conn, afc_file_ref ref,
+    unsigned long long offset1, unsigned long long offset2);
 afc_error_t AFCFileRefRead(struct afc_connection *conn, afc_file_ref ref,
     void *buf, unsigned int *len);
 afc_error_t AFCFileRefWrite(struct afc_connection *conn, afc_file_ref ref,
