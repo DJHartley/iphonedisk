@@ -1,5 +1,8 @@
 CHANGELOG
 
+2007/07/18 - allen
+- Fixed statfs call to return true disk size information
+
 2007/07/17 - allen
 - Multiple improvements by Scott Turner:
  - Added AFCFileRefSeek() to MobileDevice.h
