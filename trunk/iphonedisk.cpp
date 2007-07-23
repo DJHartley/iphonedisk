@@ -5,7 +5,7 @@
 // A MacFUSE filesystem implementation for the iPhone.
 // WARNING: Use at your own risk.
 //
-// http://www.thebends.org/~allen/code/iPhoneDisk
+// http://iphonedisk.googlecode.com/
 //
 
 #include <iostream>

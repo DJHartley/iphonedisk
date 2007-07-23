@@ -1,5 +1,5 @@
 // connection.h
-// Authors: Allen Porter <allen@thebends.org> (pin)
+// Authors: Allen Porter <allen@thebends.org>
 //          Scott Turner <scottturner007@gmail.com>
 //
 // Much code in this module was based on the iPhoneInterface tool by:
