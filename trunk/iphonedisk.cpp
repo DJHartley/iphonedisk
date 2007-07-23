@@ -1,16 +1,13 @@
 // iphonedisk.c
-// Author: Allen Porter <allen@thebends.org> 
-// Contributions: Scott Turner
+// Authors: Allen Porter <allen@thebends.org> 
+//          Scott Turner <scottturner007@gmail.com>
 //
 // A MacFUSE filesystem implementation for the iPhone.
 // WARNING: Use at your own risk.
 //
 // http://www.thebends.org/~allen/code/iPhoneDisk
 //
-// TODO: Address bug that makes coping files in the finder not work correctly
-// TODO: Investigate AFCRenamePath
 
-#include <map>
 #include <iostream>
 #include <fuse.h>
 #include <errno.h>
@@ -21,19 +18,47 @@ using namespace std;
 
 static iphonedisk::Connection* conn;
 
+/** Get file attributes.
+ *
+ * Similar to stat().  The 'st_dev' and 'st_blksize' fields are
+ * ignored.  The 'st_ino' field is ignored except if the 'use_ino'
+ * mount option is given.
+ */
 static int iphone_getattr(const char* path, struct stat *stbuf) {
   cout << "getattr: " << path << endl;
   return conn->GetAttr(path, stbuf) ? 0 : -ENOENT;
 }
 
+/** Read directory
+ *
+ * This supersedes the old getdir() interface.  New applications
+ * should use this.
+ *
+ * The filesystem may choose between two modes of operation:
+ *
+ * 1) The readdir implementation ignores the offset parameter, and
+ * passes zero to the filler function's offset.  The filler
+ * function will not return '1' (unless an error happens), so the
+ * whole directory is read in a single readdir operation.  This
+ * works just like the old getdir() method.
+ *
+ * 2) The readdir implementation keeps track of the offsets of the
+ * directory entries.  It uses the offset parameter and always
+ * passes non-zero offset to the filler function.  When the buffer
+ * is full (or an error happens) the filler function will return
+ * '1'.
+ *
+ * Introduced in version 2.3
+ */
 static int iphone_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                           off_t offset, struct fuse_file_info *fi) {
     cout << "readdir: " << path << endl;
     (void) offset;
     (void) fi;
 
-    if (!conn->IsDirectory(path))
+    if (!conn->IsDirectory(path)) {
         return -ENOENT;
+    }
 
     vector<string> files;
     conn->ListFiles(path, &files);
@@ -44,65 +69,182 @@ static int iphone_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     return 0;
 }
 
-static int iphone_open(const char *path, struct fuse_file_info *fi) {
-    cout << "open:" << path << ", flags=" << fi->flags << endl;
-    return 0;
-}
-
+/** Remove a file
+ *
+*/
 static int iphone_unlink(const char* path) {
   cout << "unlink: " << path << endl;
   return conn->Unlink(path) ? 0 : -ENOENT;
 } 
 
+/** Create a directory
+ *
+ */
 static int iphone_mkdir(const char* path, mode_t mode) {
   cout << "mkdir: " << path << endl;
   (void)mode;
   return conn->Mkdir(path) ? 0 : -ENOENT;
 }
 
-static int iphone_read(const char *path, char *buf, size_t size, off_t offset,
-                      struct fuse_file_info *fi) {
-  cout << "read: " << path << endl;
-  (void) fi;
-  return conn->ReadFile(path, buf, size, offset) ? size : -ENOENT;
-}
+/** Rename a file
+ *
+ */
+static int iphone_rename(const char* from, const char* to) {
+  cout << "rename: " << from << " to " << to << endl;
+  return conn->Rename(from, to) ? 0 : -ENOENT;
+} 
 
-static int iphone_write(const char *path, const char *buf, size_t size,
-                        off_t offset, struct fuse_file_info *fi) {
-  cout << "write: " << path << endl;
-  (void) fi;
-  return conn->WriteFile(path, buf, size, offset) ? size : -ENOENT;
-}
+/** File open operation
+ *
+ * No creation, or truncation flags (O_CREAT, O_EXCL, O_TRUNC)
+ * will be passed to open().  Open should check if the operation
+ * is permitted for the given flags.  Optionally open may also
+ * return an arbitrary filehandle in the fuse_file_info structure,
+ * which will be passed to all file operations.
+ *
+ * Changed in version 2.2
+ */
+static int iphone_open(const char *path, struct fuse_file_info *fi) {
+  cout << "open:" << path << ", fi= " << fi << ", flags=" << fi->flags << endl;
 
-// TODO: Can AFCFileRefSetFileSize be used instead?
-static int iphone_truncate(const char* path, off_t offset) {
-  cout << "truncate: " << path << endl;
-  string data;
-  if (!conn->ReadFileToString(path, &data)) {
+  fi->fh = conn->OpenFile(path, ((fi->flags & 1) == 1) ? 3 : 2);
+  cout << "file handle: " << fi->fh << endl;
+
+  if (fi->fh == 0) {
     return -ENOENT;
   }
-  if (offset < data.size() &&
-      !conn->WriteStringToFile(path, data.substr(0, offset))) {
-    cout << "Error truncating file" << endl;
-    return -ENOENT;
-  } 
   return 0;
 }
 
+/**
+ * Create and open a file
+ *
+ * If the file does not exist, first create it with the specified
+ * mode, and then open it.
+ *
+ * If this method is not implemented or under Linux kernel
+ * versions earlier than 2.6.15, the mknod() and open() methods
+ * will be called instead.
+ *
+ * Introduced in version 2.5
+ */
 static int iphone_create(const char *path, mode_t mode,
                          struct fuse_file_info *fi) {
   cout << "create " << path << "; mode=" << mode << endl;
   (void)mode;
-  (void)fi;
+
   if (conn->IsDirectory(path) || conn->IsFile(path)) {
     return -ENOENT;
   }
-  if (!conn->WriteStringToFile(path, "")) {
+
+  fi->fh = conn->OpenFile(path, 3);
+  cout << "file handle: " << fi->fh << endl;
+
+  if (fi->fh == 0) {
     return -ENOENT;
   }
   return 0;
 }
 
+/** Release an open file
+ *
+ * Release is called when there are no more references to an open
+ * file: all file descriptors are closed and all memory mappings
+ * are unmapped.
+ *
+ * For every open() call there will be exactly one release() call
+ * with the same flags and file descriptor.  It is possible to
+ * have a file opened more than once, in which case only the last
+ * release will mean, that no more reads/writes will happen on the
+ * file.  The return value of release is ignored.
+ *
+ * Changed in version 2.2
+ */
+static int iphone_release(const char *path, struct fuse_file_info *fi) {
+  cout << "release: " << path << " fi " << fi << " fh " << fi->fh << endl;
+
+  return conn->CloseFile(fi->fh) ? 0 : -ENOENT;
+}
+
+/** Read data from an open file
+ *
+ * Read should return exactly the number of bytes requested except
+ * on EOF or error, otherwise the rest of the data will be
+ * substituted with zeroes.  An exception to this is when the
+ * 'direct_io' mount option is specified, in which case the return
+ * value of the read system call will reflect the return value of
+ * this operation.
+ *
+ * Changed in version 2.2
+ */
+static int iphone_read(const char *path, char *buf, size_t size, off_t offset,
+                      struct fuse_file_info *fi) {
+  cout << "read: " << path << " fi " << fi << " fh " << fi->fh << endl;
+
+  if (!conn->ReadFile(fi->fh, buf, size, offset)) {
+    return -ENOENT;
+  }
+
+  cout << "[*] read " << size << " bytes";
+  return size;
+}
+
+/** Write data to an open file
+ *
+ * Write should return exactly the number of bytes requested
+ * except on error.  An exception to this is when the 'direct_io'
+ * mount option is specified (see read operation).
+ *
+ * Changed in version 2.2
+ */
+static int iphone_write(const char *path, const char *buf, size_t size,
+                        off_t offset, struct fuse_file_info *fi) {
+  cout << "write: " << path << endl;
+
+  if (!conn->WriteFile(fi->fh, buf, size, offset)) {
+    return -ENOENT;
+  }
+
+  cout << "[*] wrote " << size << " bytes\n";
+  return size;
+}
+
+/**
+ * Change the size of a file
+ *
+ */
+static int iphone_truncate(const char* path, off_t offset) {
+  cout << "truncate: " << path << endl;
+
+  if (!conn->SetFileSize(path, offset)) {
+    return -ENOENT;
+  }
+
+  return 0;
+}
+
+/** Get file system statistics
+ *
+ * The 'f_frsize', 'f_favail', 'f_fsid' and 'f_flag' fields are ignored
+ *
+ * Replaced 'struct statfs' parameter with 'struct statvfs' in
+ * version 2.5
+ */
+#if 0
+struct statvfs {
+	unsigned long	f_bsize;	/* File system block size */
+	unsigned long	f_frsize;	/* IGNORED Fundamental file system block size */
+	fsblkcnt_t	f_blocks;	/* Blocks on FS in units of f_frsize */
+	fsblkcnt_t	f_bfree;	/* Free blocks */
+	fsblkcnt_t	f_bavail;	/* Blocks available to non-root */
+	fsfilcnt_t	f_files;	/* Total inodes */
+	fsfilcnt_t	f_ffree;	/* Free inodes */
+	fsfilcnt_t	f_favail;	/* IGNORED Free inodes for non-root */
+	unsigned long	f_fsid;		/* IGNORED Filesystem ID */
+	unsigned long	f_flag;		/* IGNORED Bit mask of values */
+	unsigned long	f_namemax;	/* Max file name length */
+};
+#endif
 static int iphone_statfs(const char* path, struct statvfs* vfs) {
   cout << "statfs: " << path << endl;
   return conn->GetStatFs(vfs) ? 0 : -ENOENT;
@@ -126,17 +268,19 @@ int main(int argc, char* argv[]) {
   conn = iphonedisk::GetConnection();
   conn->WaitUntilConnected();
 
-  iphone_oper.getattr = iphone_getattr;
-  iphone_oper.readdir = iphone_readdir;
-  iphone_oper.open    = iphone_open;
-  iphone_oper.read    = iphone_read;
-  iphone_oper.write   = iphone_write;
-  iphone_oper.unlink  = iphone_unlink;
-  iphone_oper.rmdir   = iphone_unlink;
+  iphone_oper.getattr  = iphone_getattr;
+  iphone_oper.readdir  = iphone_readdir;
+  iphone_oper.open     = iphone_open;
+  iphone_oper.create   = iphone_create;
+  iphone_oper.release  = iphone_release;
+  iphone_oper.read     = iphone_read;
+  iphone_oper.write    = iphone_write;
   iphone_oper.truncate = iphone_truncate;
-  iphone_oper.mkdir   = iphone_mkdir;
-  iphone_oper.create  = iphone_create;
-  iphone_oper.statfs  = iphone_statfs;
+  iphone_oper.unlink   = iphone_unlink;
+  iphone_oper.rename   = iphone_rename;
+  iphone_oper.mkdir    = iphone_mkdir;
+  iphone_oper.rmdir    = iphone_unlink;
+  iphone_oper.statfs   = iphone_statfs;
   iphone_oper.chown   = iphone_chown;
   iphone_oper.chmod   = iphone_chmod;
   iphone_oper.utimens = iphone_utimens;

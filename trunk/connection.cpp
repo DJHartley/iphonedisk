@@ -1,9 +1,11 @@
 // connection.h
-// Author: Allen Porter <allen@thebends.org> 
-// Contributions: Scott Turner
+// Authors: Allen Porter <allen@thebends.org>
+//          Scott Turner <scottturner007@gmail.com>
+//
 // Much code in this module was based on the iPhoneInterface tool by:
 //   geohot, ixtli, nightwatch, warren, nail, Operator
 // See http://iphone.fiveforty.net/wiki/
+
 #include "connection.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <dlfcn.h>
@@ -57,6 +59,10 @@ class ConnectionImpl : public Connection {
     return (0 == AFCRemovePath(hAFC_, path.c_str()));
   }
 
+  virtual bool Rename(const string& from, const string& to) {
+    return (0 == AFCRenamePath(hAFC_, from.c_str(), to.c_str()));
+  }
+
   virtual bool Mkdir(const string& path) {
     return (0 == AFCDirectoryCreate(hAFC_, path.c_str()));
   }
@@ -87,14 +93,6 @@ class ConnectionImpl : public Connection {
   virtual bool IsFile(const string& path) {
     struct stat stbuf;
     return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFREG) != 0);
-  }
-
-  virtual int GetFileSize(const string& path) {
-    struct stat stbuf;
-    if (!GetAttr(path, &stbuf)) {
-      return -1;
-    }
-    return stbuf.st_size;
   }
 
   virtual bool GetAttr(const string& path, struct stat* stbuf) {
@@ -140,6 +138,11 @@ class ConnectionImpl : public Connection {
       cout << "AFCDeviceInfo failed" << endl;
       return false;
     }
+
+    unsigned long long totalBytes = 0;
+    unsigned long long freeBytes = 0;
+    int blockSize = 4096;
+
     // TODO: Write a function for converting an afc_dictionary into a map
     char *key, *val;
     while (1) {
@@ -148,95 +151,92 @@ class ConnectionImpl : public Connection {
         break;
       cout << "Key=" << key << ",val=" << val << endl;
       if (!strcmp(key, "FSTotalBytes")) {
-        stbuf->f_blocks = atoll(val) / 4096;
+        totalBytes = atoll(val);
       } else if (!strcmp(key, "FSFreeBytes")) {
-// TODO: Adjust after FSBlockSize has been parsed, for now its just
-// hard coded to 4096 which is the value of FSBlockSize below
-        stbuf->f_bfree = stbuf->f_bavail = atoll(val) / 4096;
+        freeBytes = atoll(val);
       } else if (!strcmp(key, "FSBlockSize")) {
-        stbuf->f_frsize = stbuf->f_bsize = atol(val);
+        blockSize = atoll(val);
       } else if (!strcmp(key, "Model")) {
         // ignore
       } else {
         cout << "Unhandled statfs value: " << key << "|" << val;
       }
     }
-    // Fill in some arbitrary values here
+
     stbuf->f_namemax = 255;
-    stbuf->f_files = stbuf->f_ffree = 1000000000;
+    stbuf->f_bsize = blockSize;
+    stbuf->f_frsize = stbuf->f_bsize;
+    stbuf->f_frsize = stbuf->f_bsize;
+    stbuf->f_blocks = totalBytes / blockSize;
+    stbuf->f_bfree = stbuf->f_bavail = freeBytes / blockSize;
+    stbuf->f_files = 110000;
+    stbuf->f_ffree = stbuf->f_files - 10000;
     return true;
   }
 
-  virtual bool ReadFile(const string& path, char* data,
-                        size_t size, off_t offset) {
+  virtual unsigned long long OpenFile(const string& path, int mode) {
     afc_file_ref rAFC;
-    int ret = AFCFileRefOpen(hAFC_, path.c_str(), 2, &rAFC);
+    int ret = AFCFileRefOpen(hAFC_, path.c_str(), mode, &rAFC);
     if (ret != 0) {
       cout << "Problem with AFCFileRefOpen(2): " << ret << endl;
-      return false;
+      return 0;
     }
 
-    ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
-    if (ret != 0) {
-      cout << "Problem with AFCFileRefSeek(): " << ret << endl;
-      return false;
-    }
+    return rAFC;
+  }
+
+  virtual bool CloseFile(unsigned long long rAFC) {
+    return (0 == AFCFileRefClose(hAFC_, rAFC));
+  }
+
+  virtual bool ReadFile(unsigned long long rAFC, char* data,
+			size_t size, off_t offset) {
+    AFCFileRefSeek(hAFC_, rAFC, offset, 0);
 
     unsigned int afcSize = size;
-    ret = AFCFileRefRead(hAFC_, rAFC, data, &afcSize);
-    AFCFileRefClose(hAFC_, rAFC);
+    int ret = AFCFileRefRead(hAFC_, rAFC, data, &afcSize);
+
     if (ret != 0) {
-      cout << "Problem with AFCFileRefWrite: " << ret << endl;
+      cout << "Problem with AFCFileRefRead: " << ret << endl;
       return false;
+    }
+
+    return true;
+  }
+
+  virtual bool WriteFile(unsigned long long rAFC, const char* data,
+			 size_t size, off_t offset) {
+    if (size > 0) {
+      AFCFileRefSeek(hAFC_, rAFC, offset, 0);
+
+      int ret = AFCFileRefWrite(hAFC_, rAFC, data, (unsigned long)size);
+
+      if (ret != 0) {
+        cout << "Problem with AFCFileRefWrite: " << ret << endl;
+        return false;
+      }
     }
     return true;
   }
 
-  virtual bool ReadFileToString(const string& path, string* data) {
-    data->clear();
-    unsigned int size = GetFileSize(path);
-    if (size < 0) {
-      return false;
-    }
-    // NOTE: Lets hope the file size doesn't change out from under us
-    char* buf = (char*)malloc(size);
-    if (!ReadFile(path, buf, size, 0)) {
-      free(buf);
-      return false;
-    }
-    data->append(buf, size);
-    free(buf);
-    return true;   
-  }
-
-  virtual bool WriteFile(const string& path, const char* data,
-			 size_t size, off_t offset) {
+  virtual bool SetFileSize(const string& path, off_t offset) {
     afc_file_ref rAFC;
     int ret = AFCFileRefOpen(hAFC_, path.c_str(), 3, &rAFC);
     if (ret != 0) {
       cout << "Problem with AFCFileRefOpen(3): " << ret << endl;
       return false;
     }
-    if (size > 0) {
-      ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
-      if (ret != 0) {
-        AFCFileRefClose(hAFC_, rAFC);
-        cout << "Problem with AFCFileRefSeek: " << ret << endl;
-        return false;
-      }
-      ret = AFCFileRefWrite(hAFC_, rAFC, data, (unsigned long)size);
-      if (ret != 0) {
-        AFCFileRefClose(hAFC_, rAFC);
-        cout << "Problem with AFCFileRefWrite: " << ret << endl;
-        return false;
-      }
-    }
-    AFCFileRefClose(hAFC_, rAFC);
-    return true;
-  }
 
-  virtual bool WriteStringToFile(const string& path, const string& data) {
-    return WriteFile(path, data.c_str(), data.size(), 0);
+    ret = AFCFileRefSetFileSize(hAFC_, rAFC, offset);
+
+    AFCFileRefClose(hAFC_, rAFC);
+
+    if (ret != 0) {
+      cout << "Problem with AFCFileRefSetFileSize: " << ret << endl;
+      return false;
+    }
+
+    return true;
   }
 
   void Start() {

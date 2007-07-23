@@ -1,7 +1,20 @@
 CHANGELOG
 
-2007/07/22 - allen
-- Now works seamlessly with the Finder (thanks to Ted Bonkenburg for the tips)
+007/07/22 - allen
+- Small fixes, no more errors for me when using it with the Finder
+  (thanks to Ted Bonkenburg for suggestions)
+
+2007/07/20 - Scotty
+- HUGE speed improvements all around, especially when copying large files.  Now
+  keeps around a file handle between calls, using fuse internal structures for
+  storage.
+- Added support for Renaming files
+- Cleaner support for file truncation
+- MobileDevice.h: Added prototypes for new methods AFCRenamePath, and
+  AFCFileRefSetFileSize
+- Tons of other misc code cleanup
+- Tested works with Finder
+- Tested works with Quicktime Player to play music and videos stored on iphone
 
 2007/07/18 - allen
 - Fixed statfs call to return true disk size information

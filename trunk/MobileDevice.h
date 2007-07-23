@@ -317,6 +317,7 @@ afc_error_t AFCDirectoryRead(struct afc_connection *conn/*unsigned int unused*/,
 afc_error_t AFCDirectoryClose(afc_connection *conn, struct afc_directory *dir);
 afc_error_t AFCDirectoryCreate(afc_connection *conn, const char *dirname);
 afc_error_t AFCRemovePath(afc_connection *conn, const char *dirname);
+afc_error_t AFCRenamePath(afc_connection *conn, const char *from, const char *to);
 
 /* Returns the context field of the given AFC connection. */
 unsigned int AFCConnectionGetContext(struct afc_connection *conn);
@@ -394,6 +395,8 @@ afc_error_t AFCFileRefSeek(struct afc_connection *conn, afc_file_ref ref,
     unsigned long long offset1, unsigned long long offset2);
 afc_error_t AFCFileRefRead(struct afc_connection *conn, afc_file_ref ref,
     void *buf, unsigned int *len);
+afc_error_t AFCFileRefSetFileSize(struct afc_connection *conn, afc_file_ref ref,
+    unsigned long long offset);
 afc_error_t AFCFileRefWrite(struct afc_connection *conn, afc_file_ref ref,
     const void *buf, unsigned int len);
 afc_error_t AFCFileRefClose(struct afc_connection *conn, afc_file_ref ref);
