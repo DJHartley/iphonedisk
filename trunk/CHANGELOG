@@ -1,5 +1,8 @@
 CHANGELOG
 
+2007/07/22 - allen
+- Now works seamlessly with the Finder (thanks to Ted Bonkenburg for the tips)
+
 2007/07/18 - allen
 - Fixed statfs call to return true disk size information
 

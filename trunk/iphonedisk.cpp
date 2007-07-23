@@ -108,6 +108,18 @@ static int iphone_statfs(const char* path, struct statvfs* vfs) {
   return conn->GetStatFs(vfs) ? 0 : -ENOENT;
 }
 
+static int iphone_chown(const char* path, uid_t uid, gid_t) {
+  return 0;
+}
+
+static int iphone_chmod(const char* path, mode_t) {
+  return 0;
+}
+
+static int iphone_utimens(const char* path, const struct timespec tv[2]) {
+  return 0;
+}
+
 static struct fuse_operations iphone_oper;
 
 int main(int argc, char* argv[]) {
@@ -125,6 +137,9 @@ int main(int argc, char* argv[]) {
   iphone_oper.mkdir   = iphone_mkdir;
   iphone_oper.create  = iphone_create;
   iphone_oper.statfs  = iphone_statfs;
+  iphone_oper.chown   = iphone_chown;
+  iphone_oper.chmod   = iphone_chmod;
+  iphone_oper.utimens = iphone_utimens;
 
   cout << "Mounting iPhone Volume..." << endl;
   return fuse_main(argc, argv, &iphone_oper, NULL);
