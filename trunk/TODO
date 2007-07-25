@@ -1,6 +1,9 @@
 TODO: Stuff that would be nice to do
 
-- Nicer user interface
-- Binary distribution (tips on installing MacFUSE?)
-- Remove ythread package
+- Improved documentation and Project Wikis
+- Installer + Binary distribution
+  - Should detect if MacFUSE is installed, and tell how to install
+- Become a long running process with a control pannel, no GUI needed.
+- Remove ythread package if possible
 - Connection.h documentation and cleanup
+
