@@ -33,7 +33,8 @@ static void notify_callback(am_device_notification_callback_info *info);
 // one ConnectionImpl, created by the factory below.
 class ConnectionImpl : public Connection {
  public:
-  ConnectionImpl() : condvar_(new ythread::CondVar(&mutex_)), hAFC_(NULL) { }
+  ConnectionImpl() : condvar_(new ythread::CondVar(&mutex_)), hAFC_(NULL),
+                     connect_cb_(NULL), disconnect_cb_(NULL) { }
 
   //
   // Methods for the Connection Interface
@@ -294,11 +295,15 @@ class ConnectionImpl : public Connection {
     mutex_.Lock();
     if (info->msg == ADNCI_MSG_CONNECTED && hAFC_ == NULL) {
       hAFC_ = Connect(info->dev);
-      connect_cb_(this);
+      if (connect_cb_ != NULL) {
+        connect_cb_(this);
+      }
     } else if(info->msg == ADNCI_MSG_DISCONNECTED) {
       cerr << "Device disconnected" << endl;
       hAFC_ = NULL;
-      disconnect_cb_(this);
+      if (disconnect_cb_ != NULL) {
+        disconnect_cb_(this);
+      }
     }
     condvar_->SignalAll();
     mutex_.Unlock();
@@ -437,7 +442,6 @@ static void notify_callback(am_device_notification_callback_info *info) {
 }
 
 Connection* GetConnection() {
-cout << "E" << endl;
   if (thread_ == NULL) {
     thread_ = new ConnectionThread();
     thread_->Start();
