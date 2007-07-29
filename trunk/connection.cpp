@@ -7,6 +7,7 @@
 // See http://iphone.fiveforty.net/wiki/
 
 #include "connection.h"
+#include <map>
 #include <CoreFoundation/CoreFoundation.h>
 #include <dlfcn.h>
 #include <cstdlib>
@@ -22,52 +23,57 @@
 #include "ythread/thread.h"
 #include "MobileDevice.h"  // from iPhoneInterface
 
-#if !defined(WIN32)
-#define __cdecl
-#endif
-typedef int (__cdecl * cmdsend)(am_recovery_device *,void *);
-
 using namespace std;
 
 namespace iphonedisk {
 
-static ythread::Mutex mutex_;
-static ythread::CondVar* condvar_;
-static bool connected_;
-static am_device *iPhone_;
-static afc_connection *hAFC_;
+static void notify_callback(am_device_notification_callback_info *info);
 
 // This class is kind of a hack, in that it assumes that there is only ever
 // one ConnectionImpl, created by the factory below.
 class ConnectionImpl : public Connection {
  public:
-  ConnectionImpl() {
-    condvar_ = new ythread::CondVar(&mutex_);
-    connected_ = false;
-    iPhone_ = NULL;
-  }
+  ConnectionImpl() : condvar_(new ythread::CondVar(&mutex_)), hAFC_(NULL) { }
 
-  virtual void WaitUntilConnected() {
+  //
+  // Methods for the Connection Interface
+  //
+
+  // TODO: Wait with timeout?
+  virtual bool WaitUntilConnected() {
     mutex_.Lock();
-    while (!connected_) {
+    while (hAFC_ == NULL) {
       condvar_->Wait();
     }
     mutex_.Unlock();
+    return true;
   }
 
   virtual bool Unlink(const string& path) {
+    if (!Connected()) {
+      return false;
+    }
     return (0 == AFCRemovePath(hAFC_, path.c_str()));
   }
 
   virtual bool Rename(const string& from, const string& to) {
+    if (!Connected()) {
+      return false;
+    }
     return (0 == AFCRenamePath(hAFC_, from.c_str(), to.c_str()));
   }
 
   virtual bool Mkdir(const string& path) {
+    if (!Connected()) {
+      return false;
+    }
     return (0 == AFCDirectoryCreate(hAFC_, path.c_str()));
   }
 
   virtual bool ListFiles(const string& path, vector<string>* files) {
+    if (!Connected()) {
+      return false;
+    }
     afc_directory *hAFCDir;
     if (0 == AFCDirectoryOpen(hAFC_, path.c_str(), &hAFCDir)){
       char *buffer = NULL;
@@ -80,89 +86,100 @@ class ConnectionImpl : public Connection {
       AFCDirectoryClose(hAFC_, hAFCDir);
       return true;
     } else {
-      cout << path << ": No such file or directory" << endl;
+      cerr << "ListFiles: " << path << ": No such file or directory" << endl;
       return false;
     }
   }
 
   virtual bool IsDirectory(const string& path) {
+    if (!Connected()) {
+      return false;
+    }
     struct stat stbuf;
     return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFDIR) != 0);
   }
 
   virtual bool IsFile(const string& path) {
+    if (!Connected()) {
+      return false;
+    }
     struct stat stbuf;
     return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFREG) != 0);
   }
 
   virtual bool GetAttr(const string& path, struct stat* stbuf) {
+    if (!Connected()) {
+      return false;
+    }
     memset(stbuf, 0, sizeof(struct stat));
 
     struct afc_dictionary *info;
-    if (AFCFileInfoOpen(hAFC_, path.c_str(), &info)) {
+    if (AFCFileInfoOpen(hAFC_, path.c_str(), &info) != 0) {
+      return false;
+    }
+    map<string, string> info_map;
+    CreateMap(info, &info_map);
+    AFCKeyValueClose(info);
+
+    if (info_map.find("st_size") == info_map.end()) {
+      cerr << "AFCFileInfoOpen: Missing st_size";
+      return false;
+    }
+    if (info_map.find("st_ifmt") == info_map.end()) {
+      cerr << "AFCFileInfoOpen: Missing st_ifmt";
+      return false;
+    }
+    if (info_map.find("st_blocks") == info_map.end()) {
+      cerr << "AFCFileInfoOpen: Missing st_blocks";
       return false;
     }
 
-    char *key, *val;
-    while (1) {
-      AFCKeyValueRead(info, &key, &val);
-      if (!key || !val)
-        break;
-
-      if (!strcmp(key, "st_size")) {
-        stbuf->st_size = atoll(val);
-      } else if (!strcmp(key, "st_blocks")) {
-        stbuf->st_blocks = atoll(val);
-      } else if (!strcmp(key, "st_ifmt")) {
-        if (!strcmp(val, "S_IFDIR")) {
-          stbuf->st_mode = S_IFDIR | 0777;
-          stbuf->st_nlink = 2;
-        } else if (!strcmp(val, "S_IFREG")) {
-          stbuf->st_mode = S_IFREG | 0666;
-          stbuf->st_nlink = 1;
-        } else {
-          cout << "Unhandled file type:" << val;
-        }
-      } else {
-        cout << "Unhandled stat value:" << key << "|" << val;
-      }
+    stbuf->st_size = atoll(info_map["st_size"].c_str());
+    stbuf->st_blocks = atoll(info_map["st_blocks"].c_str());
+    if (info_map["st_ifmt"] == "S_IFDIR") {
+      stbuf->st_mode = S_IFDIR | 0777;
+      stbuf->st_nlink = 2;
+    } else if (info_map["st_ifmt"] == "S_IFREG") {
+      stbuf->st_mode = S_IFREG | 0666;
+      stbuf->st_nlink = 1;
+    } else {
+      cerr << "AFCFileInfoOpen: Unknown s_ifmt value: " << info_map["st_ifmt"];
     }
-    AFCKeyValueClose(info);
     return true;
   }
 
   virtual bool GetStatFs(struct statvfs* stbuf) {
-    memset(stbuf, 0, sizeof(struct statvfs));
-    struct afc_dictionary *info;
-    if (AFCDeviceInfoOpen(hAFC_, &info) != 0) {
-      cout << "AFCDeviceInfo failed" << endl;
+    if (!Connected()) {
       return false;
     }
 
-    unsigned long long totalBytes = 0;
-    unsigned long long freeBytes = 0;
-    int blockSize = 4096;
-
-    // TODO: Write a function for converting an afc_dictionary into a map
-    char *key, *val;
-    while (1) {
-      AFCKeyValueRead(info, &key, &val);
-      if (!key || !val)
-        break;
-      cout << "Key=" << key << ",val=" << val << endl;
-      if (!strcmp(key, "FSTotalBytes")) {
-        totalBytes = atoll(val);
-      } else if (!strcmp(key, "FSFreeBytes")) {
-        freeBytes = atoll(val);
-      } else if (!strcmp(key, "FSBlockSize")) {
-        blockSize = atoll(val);
-      } else if (!strcmp(key, "Model")) {
-        // ignore
-      } else {
-        cout << "Unhandled statfs value: " << key << "|" << val;
-      }
+    memset(stbuf, 0, sizeof(struct statvfs));
+    struct afc_dictionary *info;
+    int ret = AFCDeviceInfoOpen(hAFC_, &info);
+    if (ret != 0) {
+      cerr << "AFCDeviceInfoOpen: " << ret << endl;
+      return false;
     }
+    map<string, string> info_map;
+    CreateMap(info, &info_map);
+    AFCKeyValueClose(info);
 
+    if (info_map.find("FSTotalBytes") == info_map.end()) {
+      cerr << "AFCDeviceInfoOpen: Missing FSTotalBytes";
+      return false;
+    }
+    if (info_map.find("FSBlockSize") == info_map.end()) {
+      cerr << "AFCDeviceInfoOpen: Missing FSBlockSize";
+      return false;
+    }
+    if (info_map.find("Model") == info_map.end()) {
+      cerr << "AFCDeviceInfoOpen: Missing Model";
+      return false;
+    }
+    
+    int blockSize = atoi(info_map["FSBlockSize"].c_str());
+    unsigned long long totalBytes = atoll(info_map["FSTotalBytes"].c_str());
+    unsigned long long freeBytes = atoll(info_map["FSFreeBytes"].c_str());
     stbuf->f_namemax = 255;
     stbuf->f_bsize = blockSize;
     stbuf->f_frsize = stbuf->f_bsize;
@@ -175,44 +192,58 @@ class ConnectionImpl : public Connection {
   }
 
   virtual unsigned long long OpenFile(const string& path, int mode) {
+    if (!Connected()) {
+      return false;
+    }
     afc_file_ref rAFC;
     int ret = AFCFileRefOpen(hAFC_, path.c_str(), mode, &rAFC);
     if (ret != 0) {
-      cout << "Problem with AFCFileRefOpen(2): " << ret << endl;
+      cerr << "AFCFileRefOpen(" << mode << "): " << ret << endl;
       return 0;
     }
-
     return rAFC;
   }
 
   virtual bool CloseFile(unsigned long long rAFC) {
+    if (!Connected()) {
+      return false;
+    }
     return (0 == AFCFileRefClose(hAFC_, rAFC));
   }
 
   virtual bool ReadFile(unsigned long long rAFC, char* data,
 			size_t size, off_t offset) {
-    AFCFileRefSeek(hAFC_, rAFC, offset, 0);
-
-    unsigned int afcSize = size;
-    int ret = AFCFileRefRead(hAFC_, rAFC, data, &afcSize);
-
-    if (ret != 0) {
-      cout << "Problem with AFCFileRefRead: " << ret << endl;
+    if (!Connected()) {
       return false;
     }
-
+    int ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
+    if (ret != 0) {
+      cerr << "AFCFileRefSeek: " << ret << endl;
+      return false;
+    }
+    unsigned int afcSize = size;
+    ret = AFCFileRefRead(hAFC_, rAFC, data, &afcSize);
+    if (ret != 0) {
+      cerr << "AFCFileRefRead: " << ret << endl;
+      return false;
+    }
     return true;
   }
 
   virtual bool WriteFile(unsigned long long rAFC, const char* data,
 			 size_t size, off_t offset) {
+    if (!Connected()) {
+      return false;
+    }
     if (size > 0) {
-      AFCFileRefSeek(hAFC_, rAFC, offset, 0);
-
-      int ret = AFCFileRefWrite(hAFC_, rAFC, data, (unsigned long)size);
-
+      int ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
       if (ret != 0) {
-        cout << "Problem with AFCFileRefWrite: " << ret << endl;
+        cerr << "AFCFileRefSeek: " << ret << endl;
+        return false;
+      }
+      ret = AFCFileRefWrite(hAFC_, rAFC, data, (unsigned long)size);
+      if (ret != 0) {
+        cerr << "AFCFileRefWrite: " << ret << endl;
         return false;
       }
     }
@@ -220,143 +251,198 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool SetFileSize(const string& path, off_t offset) {
+    if (!Connected()) {
+    }
     afc_file_ref rAFC;
     int ret = AFCFileRefOpen(hAFC_, path.c_str(), 3, &rAFC);
     if (ret != 0) {
-      cout << "Problem with AFCFileRefOpen(3): " << ret << endl;
+      cerr << "AFCFileRefOpen: " << ret << endl;
       return false;
     }
 
     ret = AFCFileRefSetFileSize(hAFC_, rAFC, offset);
-
     AFCFileRefClose(hAFC_, rAFC);
-
     if (ret != 0) {
-      cout << "Problem with AFCFileRefSetFileSize: " << ret << endl;
+      cerr << "AFCFileRefSetFileSize: " << ret << endl;
       return false;
     }
-
     return true;
   }
 
-  void Start() {
+
+  //
+  // Methods for initialization
+  //
+
+  // Registers appropriate calbacks.  Since this class is always created
+  // as a singleton by the ConnectionThread, we can call a static function
+  // invokes Notify() on this object.
+  bool Init() {
+    // TODO: Can we just pass NULL for notif since it isnt used?
     am_device_notification *notif;
-    int ret;
-    void* handle = dlopen(
-      "/System/Library/PrivateFrameworks/MobileDevice.framework/MobileDevice",
-      RTLD_LOCAL);
-    if (handle == 0) {
-      cout << "Error during dlopen: " << dlerror() << endl;
-      exit(EXIT_FAILURE);
-    }
-    ret = AMDeviceNotificationSubscribe(device_notification_callback, 0, 0, 0,
-                                         &notif);
+    int ret = AMDeviceNotificationSubscribe(notify_callback, 0, 0, 0, &notif);
     if (ret != 0) {
-      cout << "Problem registering main callback: " << ret << endl;
-      exit(EXIT_FAILURE);
+      cerr << "AMDeviceNotificationSubscribe: " << ret << endl;
+      return false;
     }
-    cout << "Waiting for phone... " << flush;
-    CFRunLoopRun();
+    return true;
+  }
+
+  // Invoked by the static helper method notify_callback
+  void Notify(am_device_notification_callback_info *info) {
+    // TODO: Handle reconnection case
+    mutex_.Lock();
+    if (info->msg == ADNCI_MSG_CONNECTED && hAFC_ == NULL) {
+      hAFC_ = Connect(info->dev);
+      connect_cb_(this);
+    } else if(info->msg == ADNCI_MSG_DISCONNECTED) {
+      cerr << "Device disconnected" << endl;
+      hAFC_ = NULL;
+      disconnect_cb_(this);
+    }
+    condvar_->SignalAll();
+    mutex_.Unlock();
+  }
+
+  void SetDisconnectCallback(Callback cb) {
+    mutex_.Lock();
+    disconnect_cb_ = cb;
+    mutex_.Unlock();
+  }
+
+  void SetConnectCallback(Callback cb) {
+    mutex_.Lock();
+    connect_cb_ = cb;
+    mutex_.Unlock();
   }
 
  private:
-  static bool Connect(am_device* iPhone) {
-    if (AMDeviceConnect(iPhone_)) {
-      int connid;
-      cout << "can't connect, trying in recovery mode..." << endl;
-      connid = AMDeviceGetConnectionID(iPhone_);
-      cout << "Connection ID = " << connid << endl;
-      return false;
-    }
-    if (!AMDeviceIsPaired(iPhone_)) {
-      cout << "failed, Pairing Issue" << endl;
-      return false;
-    }
-    if (AMDeviceValidatePairing(iPhone_) != 0) {
-      cout << "failed, Pairing NOT Valid" << endl;
-      return false;
-    }
-    if (AMDeviceStartSession(iPhone_))  {
-      cout << "failed, Session NOT Started" << endl;
-      return false;
-    }
-    cout << "established." << endl;
-
-    // initial display of iphone status on app run
-    int ret = AMDeviceStartService(iPhone_, CFSTR("com.apple.afc"), &hAFC_,
-                                   NULL);
-    if (ret != 0) {
-      cout << "Problem starting AFC: " << ret << endl;
-      return false;
-    }
-    ret = AFCConnectionOpen(hAFC_, 0, &hAFC_);
-    if (ret != 0) {
-      cout << "Problem with AFCConnectionOpen: " << ret << endl; 
-      return false;
-    }
-    return true;
+  // Converts an AFC Dictionary into a map
+  static void CreateMap(struct afc_dictionary* in, map<string, string>* out) {
+    char *key, *val;
+    while ((AFCKeyValueRead(in, &key, &val) == 0) && key && val) {
+      (*out)[key] = val;
+    }  
   }
 
-  static void device_notification_callback(
-      am_device_notification_callback_info *info) {
-    iPhone_ = info->dev;
-    if (info->msg == ADNCI_MSG_CONNECTED && !connected_) {
-      mutex_.Lock();
-      connected_ = Connect(iPhone_);
-      if (connected_) {
-        condvar_->SignalAll();
-      }
-      mutex_.Unlock();
-    } else if(info->msg==ADNCI_MSG_DISCONNECTED) {
-      cout << "Disonnected!" << endl;
-      exit(0);
+  static afc_connection* Connect(am_device* device) {
+    int ret = AMDeviceConnect(device);
+    if (ret != 0) {
+      cerr << "AMDeviceConnect: " << ret << endl;
+      return NULL;
     }
+    if (!AMDeviceIsPaired(device)) {
+      cerr << "Device was not paired" << endl;
+      return NULL;
+    }
+    ret = AMDeviceValidatePairing(device);
+    if (ret != 0) {
+      cerr << "AMDeviceValidatePairing: " << ret << endl;
+      return NULL;
+    }
+    ret = AMDeviceStartSession(device);
+    if (ret != 0) {
+      cerr << "AMDeviceStartSession: " << ret << endl;
+      return NULL;
+    }
+    // TODO: Enable a mode that connects to afc2 to get a (readonly) view of
+    // the entire device?
+    afc_connection *hAFC;
+    ret = AMDeviceStartService(device, CFSTR("com.apple.afc"), &hAFC, NULL);
+    if (ret != 0) {
+      cerr << "AMDeviceStartService: " << ret << endl;
+      return NULL;
+    }
+    if (hAFC == NULL) {  // sanity check
+      cerr << "AMDeviceStartService did not initialize connection!";
+      return NULL;
+    }
+    ret = AFCConnectionOpen(hAFC, 0, &hAFC);
+    if (ret != 0) {
+      cerr << "AFCConnectionOpen: " << ret << endl;
+      return NULL;
+    }
+    return hAFC;
   }
+
+  bool Connected() {
+    mutex_.Lock();
+    bool connected = (hAFC_ != NULL);
+    mutex_.Unlock();
+    return connected;
+  }
+
+  ythread::Mutex mutex_;        // protects hAFC_ and callbacks
+  ythread::CondVar* condvar_;   // wakes WaitUntilConnected
+  afc_connection *hAFC_;
+  // External callbacks
+  Callback connect_cb_;
+  Callback disconnect_cb_;
 };
 
-class Factory : public ythread::Thread {
- public:
-  Factory() : condvar_(new ythread::CondVar(&mutex_)), connection_(NULL) { }
 
-  virtual ~Factory() {
+class ConnectionThread : public ythread::Thread {
+ public:
+  ConnectionThread() : condvar_(new ythread::CondVar(&mutex_)),
+                       connection_(NULL), started_(false) { }
+
+  virtual ~ConnectionThread() {
     delete condvar_;
   }
  
-  void Wait() {
+  ConnectionImpl* GetConnection() {
+    ConnectionImpl* conn = NULL;
     mutex_.Lock();
-    while (connection_ == NULL) {
+    while (!started_) {
       condvar_->Wait();
     }
+    conn = connection_;
     mutex_.Unlock();
-  }
-
-  Connection* GetConnection() {
-    return connection_;
+    return conn;
   }
 
  protected:
+  // If initialization fails, the thread is exited immediately
   virtual void Run() {
+    bool loop = true;
     mutex_.Lock();
     connection_ = new ConnectionImpl();
+    if (!connection_->Init()) {
+      delete connection_;
+      connection_ = NULL;
+      loop = false;
+    }
+    started_ = true;
     condvar_->SignalAll();
     mutex_.Unlock();
-    connection_->Start();
+
+    if (loop) {
+      CFRunLoopRun();  // forever
+    }
+    cerr << "ConnectionThread exiting" << endl;
   }
 
   ythread::Mutex mutex_;
   ythread::CondVar* condvar_;
+
   ConnectionImpl* connection_;
+  bool started_;
 };
 
-static Factory* factory_ = NULL;
+static ConnectionThread* thread_ = NULL;
+
+static void notify_callback(am_device_notification_callback_info *info) {
+  ConnectionImpl* conn = thread_->GetConnection();
+  conn->Notify(info);
+}
 
 Connection* GetConnection() {
-  if (factory_ == NULL) {
-    factory_ = new Factory();
-    factory_->Start();
-    factory_->Wait();
+cout << "E" << endl;
+  if (thread_ == NULL) {
+    thread_ = new ConnectionThread();
+    thread_->Start();
   }
-  return factory_->GetConnection();
+  return thread_->GetConnection();
 }
 
 }  // namespace iphonedisk

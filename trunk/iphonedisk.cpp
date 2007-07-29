@@ -1,20 +1,21 @@
 // iphonedisk.c
 // Authors: Allen Porter <allen@thebends.org> 
 //          Scott Turner <scottturner007@gmail.com>
-//
-// A MacFUSE filesystem implementation for the iPhone.
-// WARNING: Use at your own risk.
-//
 // http://iphonedisk.googlecode.com/
 //
+// Implements a MacFUSE filesystem.  See /usr/local/include/fuse/fuse.h for
+// details of the member functions of the fuse_operations struct which is
+// implemented here.
 
+#include "iphonedisk.h"
 #include <iostream>
-#include <fuse.h>
 #include <errno.h>
 #include <string.h>
 #include "connection.h"
 
 using namespace std;
+
+namespace iphonedisk {
 
 static iphonedisk::Connection* conn;
 
@@ -133,6 +134,7 @@ static int iphone_create(const char *path, mode_t mode,
   cout << "create " << path << "; mode=" << mode << endl;
   (void)mode;
 
+  // TODO: Just stat the file instead
   if (conn->IsDirectory(path) || conn->IsFile(path)) {
     return -ENOENT;
   }
@@ -262,29 +264,25 @@ static int iphone_utimens(const char* path, const struct timespec tv[2]) {
   return 0;
 }
 
-static struct fuse_operations iphone_oper;
-
-int main(int argc, char* argv[]) {
-  conn = iphonedisk::GetConnection();
-  conn->WaitUntilConnected();
-
-  iphone_oper.getattr  = iphone_getattr;
-  iphone_oper.readdir  = iphone_readdir;
-  iphone_oper.open     = iphone_open;
-  iphone_oper.create   = iphone_create;
-  iphone_oper.release  = iphone_release;
-  iphone_oper.read     = iphone_read;
-  iphone_oper.write    = iphone_write;
-  iphone_oper.truncate = iphone_truncate;
-  iphone_oper.unlink   = iphone_unlink;
-  iphone_oper.rename   = iphone_rename;
-  iphone_oper.mkdir    = iphone_mkdir;
-  iphone_oper.rmdir    = iphone_unlink;
-  iphone_oper.statfs   = iphone_statfs;
-  iphone_oper.chown   = iphone_chown;
-  iphone_oper.chmod   = iphone_chmod;
-  iphone_oper.utimens = iphone_utimens;
-
-  cout << "Mounting iPhone Volume..." << endl;
-  return fuse_main(argc, argv, &iphone_oper, NULL);
+void InitFuseConfig(Connection* connection,
+                    struct fuse_operations* iphone_oper)  {
+  conn = connection;
+  iphone_oper->getattr  = iphone_getattr;
+  iphone_oper->readdir  = iphone_readdir;
+  iphone_oper->open     = iphone_open;
+  iphone_oper->create   = iphone_create;
+  iphone_oper->release  = iphone_release;
+  iphone_oper->read     = iphone_read;
+  iphone_oper->write    = iphone_write;
+  iphone_oper->truncate = iphone_truncate;
+  iphone_oper->unlink   = iphone_unlink;
+  iphone_oper->rename   = iphone_rename;
+  iphone_oper->mkdir    = iphone_mkdir;
+  iphone_oper->rmdir    = iphone_unlink;
+  iphone_oper->statfs   = iphone_statfs;
+  iphone_oper->chown    = iphone_chown;
+  iphone_oper->chmod    = iphone_chmod;
+  iphone_oper->utimens  = iphone_utimens;
 }
+
+}  // namespace

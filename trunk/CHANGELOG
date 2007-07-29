@@ -1,6 +1,9 @@
 CHANGELOG
 
-007/07/22 - allen
+2007/07/29 - allen
+- Code cleanup, in preparation for using as a long running daemon/agent
+
+2007/07/22 - allen
 - Small fixes, no more errors for me when using it with the Finder
   (thanks to Ted Bonkenburg for suggestions)
 
