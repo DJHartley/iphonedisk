@@ -1,5 +1,12 @@
 CHANGELOG
 
+2007/08/10 - allen
+- Added standalone daemon that will automount the phone when connected.  Should
+  later be controlled by a GUI.
+
+2007/08/01 - allen
+- Added Drive icon, designed by J. Nicholas Jitkoff.  Thanks!
+
 2007/07/29 - allen
 - Code cleanup, in preparation for using as a long running daemon/agent
 

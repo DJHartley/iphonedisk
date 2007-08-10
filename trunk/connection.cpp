@@ -6,6 +6,10 @@
 //   geohot, ixtli, nightwatch, warren, nail, Operator
 // See http://iphone.fiveforty.net/wiki/
 
+// TODO: Perform a regression test with mutexes
+
+#include "ythread/callback-inl.h"
+
 #include "connection.h"
 #include <map>
 #include <CoreFoundation/CoreFoundation.h>
@@ -42,15 +46,15 @@ class ConnectionImpl : public Connection {
 
   // TODO: Wait with timeout?
   virtual bool WaitUntilConnected() {
-    mutex_.Lock();
+    ythread::MutexLock l(&mutex_);
     while (hAFC_ == NULL) {
       condvar_->Wait();
     }
-    mutex_.Unlock();
     return true;
   }
 
   virtual bool Unlink(const string& path) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -58,6 +62,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool Rename(const string& from, const string& to) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -65,6 +70,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool Mkdir(const string& path) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -72,6 +78,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool ListFiles(const string& path, vector<string>* files) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -93,22 +100,17 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool IsDirectory(const string& path) {
-    if (!Connected()) {
-      return false;
-    }
     struct stat stbuf;
     return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFDIR) != 0);
   }
 
   virtual bool IsFile(const string& path) {
-    if (!Connected()) {
-      return false;
-    }
     struct stat stbuf;
     return GetAttr(path, &stbuf) && ((stbuf.st_mode & S_IFREG) != 0);
   }
 
   virtual bool GetAttr(const string& path, struct stat* stbuf) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -150,6 +152,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool GetStatFs(struct statvfs* stbuf) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -193,6 +196,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual unsigned long long OpenFile(const string& path, int mode) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -206,6 +210,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool CloseFile(unsigned long long rAFC) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -214,6 +219,7 @@ class ConnectionImpl : public Connection {
 
   virtual bool ReadFile(unsigned long long rAFC, char* data,
 			size_t size, off_t offset) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -233,6 +239,7 @@ class ConnectionImpl : public Connection {
 
   virtual bool WriteFile(unsigned long long rAFC, const char* data,
 			 size_t size, off_t offset) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
       return false;
     }
@@ -252,7 +259,9 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool SetFileSize(const string& path, off_t offset) {
+    ythread::MutexLock l(&mutex_);
     if (!Connected()) {
+      return false;
     }
     afc_file_ref rAFC;
     int ret = AFCFileRefOpen(hAFC_, path.c_str(), 3, &rAFC);
@@ -279,7 +288,6 @@ class ConnectionImpl : public Connection {
   // as a singleton by the ConnectionThread, we can call a static function
   // invokes Notify() on this object.
   bool Init() {
-    // TODO: Can we just pass NULL for notif since it isnt used?
     am_device_notification *notif;
     int ret = AMDeviceNotificationSubscribe(notify_callback, 0, 0, 0, &notif);
     if (ret != 0) {
@@ -291,34 +299,29 @@ class ConnectionImpl : public Connection {
 
   // Invoked by the static helper method notify_callback
   void Notify(am_device_notification_callback_info *info) {
-    // TODO: Handle reconnection case
-    mutex_.Lock();
+    ythread::MutexLock l(&mutex_);
     if (info->msg == ADNCI_MSG_CONNECTED && hAFC_ == NULL) {
       hAFC_ = Connect(info->dev);
       if (connect_cb_ != NULL) {
-        connect_cb_(this);
+        connect_cb_->Execute();
       }
     } else if(info->msg == ADNCI_MSG_DISCONNECTED) {
-      cerr << "Device disconnected" << endl;
       hAFC_ = NULL;
       if (disconnect_cb_ != NULL) {
-        disconnect_cb_(this);
+        disconnect_cb_->Execute();
       }
     }
     condvar_->SignalAll();
-    mutex_.Unlock();
   }
 
-  void SetDisconnectCallback(Callback cb) {
-    mutex_.Lock();
+  void SetDisconnectCallback(ythread::Callback* cb) {
+    ythread::MutexLock l(&mutex_);
     disconnect_cb_ = cb;
-    mutex_.Unlock();
   }
 
-  void SetConnectCallback(Callback cb) {
-    mutex_.Lock();
+  void SetConnectCallback(ythread::Callback* cb) {
+    ythread::MutexLock l(&mutex_);
     connect_cb_ = cb;
-    mutex_.Unlock();
   }
 
  private:
@@ -370,10 +373,9 @@ class ConnectionImpl : public Connection {
     return hAFC;
   }
 
+  // Must be called with mutex_ held
   bool Connected() {
-    mutex_.Lock();
     bool connected = (hAFC_ != NULL);
-    mutex_.Unlock();
     return connected;
   }
 
@@ -381,8 +383,8 @@ class ConnectionImpl : public Connection {
   ythread::CondVar* condvar_;   // wakes WaitUntilConnected
   afc_connection *hAFC_;
   // External callbacks
-  Callback connect_cb_;
-  Callback disconnect_cb_;
+  ythread::Callback* connect_cb_;
+  ythread::Callback* disconnect_cb_;
 };
 
 
@@ -396,14 +398,11 @@ class ConnectionThread : public ythread::Thread {
   }
  
   ConnectionImpl* GetConnection() {
-    ConnectionImpl* conn = NULL;
-    mutex_.Lock();
+    ythread::MutexLock l(&mutex_);
     while (!started_) {
       condvar_->Wait();
     }
-    conn = connection_;
-    mutex_.Unlock();
-    return conn;
+    return connection_;
   }
 
  protected:

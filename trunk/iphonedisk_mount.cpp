@@ -11,10 +11,19 @@
 
 static struct fuse_operations iphone_oper;
 
-void disconnect_callback(iphonedisk::Connection* conn) {
-  cerr << "Device disconnected!" << endl;
-  exit(1);
-}
+class Watcher {
+ public:
+  Watcher(iphonedisk::Connection* conn) {
+    conn->SetDisconnectCallback(
+      ythread::NewCallback(this, &Watcher::Disconnect));
+  }
+
+ private:
+  void Disconnect() {
+    cerr << "Device disconnected!" << endl;
+    exit(1);
+  }
+};
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
@@ -23,12 +32,12 @@ int main(int argc, char* argv[]) {
     cerr << "Unable to initialize connection to device";
     return 1;
   }
-  conn->SetDisconnectCallback(disconnect_callback);
 
-  cout << "Initialization successful, waiting for device." << endl;
+  Watcher watcher(conn);
+  cout << "Waiting for device..." << endl;
   if (!conn->WaitUntilConnected()) {
     cerr << "Unable to connect to device" << endl;
-    return 1;
+    exit(1);
   }
 
   cout << "Initializing filesystem." << endl;

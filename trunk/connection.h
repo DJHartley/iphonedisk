@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
+namespace ythread { class Callback; }
+
 namespace iphonedisk {
 
 // Implementations of the Connection class must be threadsafe.
@@ -29,9 +31,8 @@ class Connection {
 
   // Async notifications of connection and disconnection events.  May be
   // invoked from an internal connection thread.
-  typedef void (*Callback)(Connection* conn);
-  virtual void SetDisconnectCallback(Callback cb) = 0;
-  virtual void SetConnectCallback(Callback cb) = 0;
+  virtual void SetDisconnectCallback(ythread::Callback* cb) = 0;
+  virtual void SetConnectCallback(ythread::Callback* cb) = 0;
 
   // All methods below return true on success and false on failure.
 
