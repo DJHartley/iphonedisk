@@ -9,6 +9,8 @@
 #include "iphonedisk.h"
 #include "connection.cpp"
 
+#define SERVICE "com.apple.afc"
+
 static struct fuse_operations iphone_oper;
 
 class Watcher {
@@ -27,7 +29,7 @@ class Watcher {
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
-  iphonedisk::Connection* conn = iphonedisk::GetConnection();
+  iphonedisk::Connection* conn = iphonedisk::GetConnection(SERVICE);
   if (conn == NULL) {
     cerr << "Unable to initialize connection to device";
     return 1;

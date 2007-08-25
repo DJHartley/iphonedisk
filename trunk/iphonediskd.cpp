@@ -15,6 +15,7 @@
 
 // TODO: Make this a command line or config parameter
 #define MOUNT_POINT "/Volumes/iPhone"
+#define SERVICE "com.service.afc"
 
 class FuseThread : public ythread::Thread {
  public:
@@ -35,7 +36,9 @@ class FuseThread : public ythread::Thread {
   }
 
   void Connect() {
+#ifdef DEBUG
     cout << "iPhone connected" << endl;
+#endif
     ythread::MutexLock l(&mutex_);
     condvar_.Signal();  // Wake Run()
   }
@@ -97,7 +100,7 @@ class FuseThread : public ythread::Thread {
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
-  iphonedisk::Connection* conn = iphonedisk::GetConnection();
+  iphonedisk::Connection* conn = iphonedisk::GetConnection(SERVICE);
   if (conn == NULL) {
     cerr << "Unable to initialize" << endl;
     return 1;

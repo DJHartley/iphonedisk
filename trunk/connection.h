@@ -28,6 +28,8 @@ class Connection {
 
   // Should be invoked before using the connection
   virtual bool WaitUntilConnected() = 0;
+  
+  virtual void SetService(const std::string& service) = 0;
 
   // Async notifications of connection and disconnection events.  May be
   // invoked from an internal connection thread.
@@ -65,13 +67,16 @@ class Connection {
   Connection() { }
 };
 
-// Gets the Singleton Connection object.  Creates the Connection if it was
-// not previously created.  The return value is NULL if a non-recoverable error
-// occurred during initialization (registering with the MobileDevice framework,
-// for example).
+// Creates the Connection object.   The return value is NULL if a
+// non-recoverable error occurred during initialization (registering with the
+// MobileDevice framework, for example).
 //
-// This function is not threadsafe
-Connection* GetConnection();
+// The service should be an AFC service name running on the iPhone, usually:
+//   com.apple.afc   Media directory
+//   com.apple.afc2  Root directory
+//
+// This function can only be called once.
+Connection* GetConnection(const std::string& service);
 
 }  // namespace
 

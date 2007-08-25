@@ -6,8 +6,6 @@
 //   geohot, ixtli, nightwatch, warren, nail, Operator
 // See http://iphone.fiveforty.net/wiki/
 
-// TODO: Perform a regression test with mutexes
-
 #include "ythread/callback-inl.h"
 
 #include "connection.h"
@@ -37,8 +35,9 @@ static void notify_callback(am_device_notification_callback_info *info);
 // one ConnectionImpl, created by the factory below.
 class ConnectionImpl : public Connection {
  public:
-  ConnectionImpl() : condvar_(new ythread::CondVar(&mutex_)), hAFC_(NULL),
-                     connect_cb_(NULL), disconnect_cb_(NULL) { }
+  ConnectionImpl(const string& service)
+    : condvar_(new ythread::CondVar(&mutex_)), hAFC_(NULL),
+      connect_cb_(NULL), disconnect_cb_(NULL), service_(service) { }
 
   //
   // Methods for the Connection Interface
@@ -51,6 +50,11 @@ class ConnectionImpl : public Connection {
       condvar_->Wait();
     }
     return true;
+  }
+  
+  virtual void SetService(const string& service) {
+    ythread::MutexLock l(&mutex_);
+	service_ = service;
   }
 
   virtual bool Unlink(const string& path) {
@@ -145,8 +149,13 @@ class ConnectionImpl : public Connection {
     } else if (info_map["st_ifmt"] == "S_IFREG") {
       stbuf->st_mode = S_IFREG | 0666;
       stbuf->st_nlink = 1;
-    } else {
-      cerr << "AFCFileInfoOpen: Unknown s_ifmt value: " << info_map["st_ifmt"];
+    } else if (info_map["st_ifmt"] == "S_IFSOCK") {
+      stbuf->st_mode = S_IFSOCK | 0400;
+    } else if (info_map["st_ifchr"] == "S_IFCHR") {
+      stbuf->st_mode = S_IFCHR | 0400;
+   } else {
+      cerr << "AFCFileInfoOpen: Unknown s_ifmt value: " << info_map["st_ifmt"]
+           << endl;
     }
     return true;
   }
@@ -333,7 +342,7 @@ class ConnectionImpl : public Connection {
     }  
   }
 
-  static afc_connection* Connect(am_device* device) {
+  afc_connection* Connect(am_device* device) {
     int ret = AMDeviceConnect(device);
     if (ret != 0) {
       cerr << "AMDeviceConnect: " << ret << endl;
@@ -353,10 +362,10 @@ class ConnectionImpl : public Connection {
       cerr << "AMDeviceStartSession: " << ret << endl;
       return NULL;
     }
-    // TODO: Enable a mode that connects to afc2 to get a (readonly) view of
-    // the entire device?
     afc_connection *hAFC;
-    ret = AMDeviceStartService(device, CFSTR("com.apple.afc"), &hAFC, NULL);
+    CFStringRef service = CFStringCreateWithCString(NULL, service_.c_str(),
+                                                    service_.size());
+    ret = AMDeviceStartService(device, service, &hAFC, NULL);
     if (ret != 0) {
       cerr << "AMDeviceStartService: " << ret << endl;
       return NULL;
@@ -385,13 +394,16 @@ class ConnectionImpl : public Connection {
   // External callbacks
   ythread::Callback* connect_cb_;
   ythread::Callback* disconnect_cb_;
+
+  string service_;
 };
 
 
 class ConnectionThread : public ythread::Thread {
  public:
-  ConnectionThread() : condvar_(new ythread::CondVar(&mutex_)),
-                       connection_(NULL), started_(false) { }
+  ConnectionThread(const string& service)
+    : condvar_(new ythread::CondVar(&mutex_)),
+      connection_(NULL), service_(service), started_(false) { }
 
   virtual ~ConnectionThread() {
     delete condvar_;
@@ -410,7 +422,7 @@ class ConnectionThread : public ythread::Thread {
   virtual void Run() {
     bool loop = true;
     mutex_.Lock();
-    connection_ = new ConnectionImpl();
+    connection_ = new ConnectionImpl(service_);
     if (!connection_->Init()) {
       delete connection_;
       connection_ = NULL;
@@ -430,6 +442,7 @@ class ConnectionThread : public ythread::Thread {
   ythread::CondVar* condvar_;
 
   ConnectionImpl* connection_;
+  string service_;
   bool started_;
 };
 
@@ -440,11 +453,13 @@ static void notify_callback(am_device_notification_callback_info *info) {
   conn->Notify(info);
 }
 
-Connection* GetConnection() {
-  if (thread_ == NULL) {
-    thread_ = new ConnectionThread();
-    thread_->Start();
+Connection* GetConnection(const string& service) {
+  if (thread_ != NULL) {
+    cerr << "GetConnection() can only be called once";
+    exit(1);
   }
+  thread_ = new ConnectionThread(service);
+  thread_->Start();
   return thread_->GetConnection();
 }
 

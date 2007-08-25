@@ -26,7 +26,9 @@ static iphonedisk::Connection* conn;
  * mount option is given.
  */
 static int iphone_getattr(const char* path, struct stat *stbuf) {
+#ifdef DEBUG
   cout << "getattr: " << path << endl;
+#endif
   return conn->GetAttr(path, stbuf) ? 0 : -ENOENT;
 }
 
@@ -53,7 +55,9 @@ static int iphone_getattr(const char* path, struct stat *stbuf) {
  */
 static int iphone_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                           off_t offset, struct fuse_file_info *fi) {
+#ifdef DEBUG
     cout << "readdir: " << path << endl;
+#endif
     (void) offset;
     (void) fi;
 
@@ -74,7 +78,9 @@ static int iphone_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
  *
 */
 static int iphone_unlink(const char* path) {
+#ifdef DEBUG
   cout << "unlink: " << path << endl;
+#endif
   return conn->Unlink(path) ? 0 : -ENOENT;
 } 
 
@@ -82,7 +88,9 @@ static int iphone_unlink(const char* path) {
  *
  */
 static int iphone_mkdir(const char* path, mode_t mode) {
+#ifdef DEBUG
   cout << "mkdir: " << path << endl;
+#endif
   (void)mode;
   return conn->Mkdir(path) ? 0 : -ENOENT;
 }
@@ -91,7 +99,9 @@ static int iphone_mkdir(const char* path, mode_t mode) {
  *
  */
 static int iphone_rename(const char* from, const char* to) {
+#ifdef DEBUG
   cout << "rename: " << from << " to " << to << endl;
+#endif
   return conn->Rename(from, to) ? 0 : -ENOENT;
 } 
 
@@ -106,7 +116,9 @@ static int iphone_rename(const char* from, const char* to) {
  * Changed in version 2.2
  */
 static int iphone_open(const char *path, struct fuse_file_info *fi) {
+#ifdef DEBUG
   cout << "open:" << path << ", fi= " << fi << ", flags=" << fi->flags << endl;
+#endif
 
   fi->fh = conn->OpenFile(path, ((fi->flags & 1) == 1) ? 3 : 2);
   cout << "file handle: " << fi->fh << endl;
@@ -131,7 +143,9 @@ static int iphone_open(const char *path, struct fuse_file_info *fi) {
  */
 static int iphone_create(const char *path, mode_t mode,
                          struct fuse_file_info *fi) {
+#ifdef DEBUG
   cout << "create " << path << "; mode=" << mode << endl;
+#endif
   (void)mode;
 
   // TODO: Just stat the file instead
@@ -163,8 +177,9 @@ static int iphone_create(const char *path, mode_t mode,
  * Changed in version 2.2
  */
 static int iphone_release(const char *path, struct fuse_file_info *fi) {
+#ifdef DEBUG
   cout << "release: " << path << " fi " << fi << " fh " << fi->fh << endl;
-
+#endif
   return conn->CloseFile(fi->fh) ? 0 : -ENOENT;
 }
 
@@ -181,13 +196,17 @@ static int iphone_release(const char *path, struct fuse_file_info *fi) {
  */
 static int iphone_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi) {
+#ifdef DEBUG
   cout << "read: " << path << " fi " << fi << " fh " << fi->fh << endl;
+#endif
 
   if (!conn->ReadFile(fi->fh, buf, size, offset)) {
     return -ENOENT;
   }
 
+#ifdef DEBUG
   cout << "[*] read " << size << " bytes";
+#endif
   return size;
 }
 
@@ -201,7 +220,9 @@ static int iphone_read(const char *path, char *buf, size_t size, off_t offset,
  */
 static int iphone_write(const char *path, const char *buf, size_t size,
                         off_t offset, struct fuse_file_info *fi) {
+#ifdef DEBUG
   cout << "write: " << path << endl;
+#endif
 
   if (!conn->WriteFile(fi->fh, buf, size, offset)) {
     return -ENOENT;
@@ -216,7 +237,9 @@ static int iphone_write(const char *path, const char *buf, size_t size,
  *
  */
 static int iphone_truncate(const char* path, off_t offset) {
+#ifdef DEBUG
   cout << "truncate: " << path << endl;
+#endif
 
   if (!conn->SetFileSize(path, offset)) {
     return -ENOENT;
@@ -248,7 +271,9 @@ struct statvfs {
 };
 #endif
 static int iphone_statfs(const char* path, struct statvfs* vfs) {
+#ifdef DEBUG
   cout << "statfs: " << path << endl;
+#endif
   return conn->GetStatFs(vfs) ? 0 : -ENOENT;
 }
 
