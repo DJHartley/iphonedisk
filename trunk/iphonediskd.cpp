@@ -21,18 +21,26 @@
 
 class FuseThread : public ythread::Thread {
  public:
-  FuseThread(iphonedisk::Manager* manager)
+  FuseThread()
       : fuse_(NULL),
-        manager_(manager),
         connected_(false),
         afc_(NULL),
         mutex_(),
-        condvar_(&mutex_) { }
+        condvar_(&mutex_) {
+    manager_ = iphonedisk::NewManager(
+        NewCallback(this, &FuseThread::Connect),
+        NewCallback(this, &FuseThread::Disconnect));
+  }
+
+  virtual ~FuseThread() {
+    delete manager_;
+  }
 
  protected:
   void Disconnect() {
     cout << "iPhone disconnected" << endl;
     ythread::MutexLock l(&mutex_);
+    afc_ = NULL;
     if (fuse_ != NULL) {
       fuse_exit(fuse_);
     }
@@ -51,12 +59,11 @@ class FuseThread : public ythread::Thread {
 
   virtual void Run() {
     mutex_.Lock();
-    manager_->SetConnectCallback(NewCallback(this, &FuseThread::Connect));
-    manager_->SetDisconnectCallback(NewCallback(this, &FuseThread::Disconnect));
     while (1) {
       cout << "Waiting for connection..." << endl;
-      condvar_.Wait();  // Wait for Connect or Disconnect callback
-
+      while (afc_ == NULL) {
+        condvar_.Wait();  // Wait for Connect or Disconnect callback
+      }
       iphonedisk::Connection* conn = iphonedisk::NewConnection(afc_);
 
       cout << "Initializing" << endl;
@@ -111,14 +118,8 @@ class FuseThread : public ythread::Thread {
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
-  iphonedisk::Manager* manager = iphonedisk::NewManager();
-  if (manager == NULL) {
-    cerr << "Unable to initialize" << endl;
-    return 1;
-  } 
-  ythread::Thread* t = new FuseThread(manager);
+  ythread::Thread* t = new FuseThread();
   t->Start();
   t->Join();
-  delete manager;
   cout << "Program exited.";
 }

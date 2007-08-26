@@ -23,11 +23,6 @@ class Manager {
   // if there was a fatal error.
   virtual bool WaitUntilConnected() = 0;
 
-  // Async notifications of connection and disconnection events.  May be
-  // invoked from an internal connection thread.
-  virtual void SetDisconnectCallback(ythread::Callback* cb) = 0;
-  virtual void SetConnectCallback(ythread::Callback* cb) = 0;
-
   // Returns an afc_connection handle to the currently connected device, or
   // NULL if a connection could not be established.
   // service should be an AFC service name such as:
@@ -40,7 +35,10 @@ class Manager {
   Manager() { }
 };
 
-Manager* NewManager();
+// Async notifications of connection and disconnection events are optional and
+// may be NULL.
+Manager* NewManager(ythread::Callback* connect_cb,
+                    ythread::Callback* disconnect_cb);
 
 }  // namespace iphonedisk
 

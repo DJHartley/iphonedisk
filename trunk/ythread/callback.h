@@ -15,12 +15,14 @@ class Callback {
   Callback() { }
 };
 
+Callback* NewCallback(void (*func)());
+
 template <class CLASS>
-Callback* NewCallback(CLASS* object, void(CLASS::*)());
+Callback* NewCallback(CLASS* object, void(CLASS::*func)());
 
 // overload for additional arguments
 template <class CLASS, class ARG>
-Callback* NewCallback(CLASS* object, void(CLASS::*)(ARG), ARG arg);
+Callback* NewCallback(CLASS* object, void(CLASS::*func)(ARG), ARG arg);
 
 template <class ARG>
 class Callback1 {
@@ -33,7 +35,7 @@ class Callback1 {
 };
 
 template <class CLASS, class ARG>
-Callback1<ARG>* NewCallback(CLASS* object, void(CLASS::*)(ARG));
+Callback1<ARG>* NewCallback(CLASS* object, void(CLASS::*func)(ARG));
 
 }  // namespace ythread
 

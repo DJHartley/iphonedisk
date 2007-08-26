@@ -22,12 +22,13 @@ static void notify_callback(am_device_notification_callback_info *info,
 
 class ManagerImpl : public ythread::Thread, public Manager {
  public:
-  ManagerImpl() : condvar_(&mutex_),
-                  done_(false),
-                  device_(NULL),
-                  connect_cb_(NULL),
-                  disconnect_cb_(NULL),
-                  loop_(NULL) { }
+  ManagerImpl(ythread::Callback* connect_cb, ythread::Callback* disconnect_cb)
+    : condvar_(&mutex_),
+      done_(false),
+      device_(NULL),
+      connect_cb_(connect_cb),
+      disconnect_cb_(disconnect_cb),
+      loop_(NULL) { }
 
   virtual ~ManagerImpl() {
     // Wait until the thread is started before trying to destroy, otherwise
@@ -37,6 +38,8 @@ class ManagerImpl : public ythread::Thread, public Manager {
       CFRunLoopStop(loop_);
     }
     Join();
+    delete connect_cb_;
+    delete disconnect_cb_;
   }
 
   virtual bool WaitUntilConnected() {
@@ -45,16 +48,6 @@ class ManagerImpl : public ythread::Thread, public Manager {
       condvar_.Wait();
     }
     return !done_;
-  }
-
-  virtual void SetDisconnectCallback(ythread::Callback* cb) {
-    ythread::MutexLock l(&mutex_);
-    disconnect_cb_ = cb;
-  }
-
-  virtual void SetConnectCallback(ythread::Callback* cb) {
-    ythread::MutexLock l(&mutex_);
-    connect_cb_ = cb;
   }
 
   afc_connection* Open(const string& service) {
@@ -164,8 +157,9 @@ static void notify_callback(am_device_notification_callback_info *info,
   manager->Notify(info);
 }
 
-Manager* NewManager() {
-  ManagerImpl* manager = new ManagerImpl();
+Manager* NewManager(ythread::Callback* connect_cb,
+                    ythread::Callback* disconnect_cb) {
+  ManagerImpl* manager = new ManagerImpl(connect_cb, disconnect_cb);
   manager->Start();
   return manager;
 }

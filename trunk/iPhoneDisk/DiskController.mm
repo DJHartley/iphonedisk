@@ -1,9 +1,14 @@
-#import "DiskController.h"
-#include "connection.h"
+// DiskController.mm
+// Authors: Allen Porter <allen@thebends.org>
 
-static iphonedisk::Connection* conn = NULL;
-static const char* kMediaAFC = "com.apple.afc";
-static const char* kRootAFC = "com.apple.afc";
+#import "DiskController.h"
+#include "manager.h"
+
+static const NSString* kMediaAFC = @"com.apple.afc";
+static const NSString* kRootAFC = @"com.apple.afc2";
+static NSString* service = kMediaAFC;
+
+static iphonedisk::Manager* manager = NULL;
 
 @implementation DiskController
 
@@ -14,19 +19,22 @@ static const char* kRootAFC = "com.apple.afc";
 
 - (IBAction)mediaPressed:(id)sender
 {
-	conn->SetService(kMediaAFC);
+	service = kMediaAFC;
 }
 
 - (IBAction)rootPressed:(id)sender
 {
-	conn->SetService(kRootAFC);
+	service = kRootAFC;
 }
 
 - (void)awakeFromNib
 {
-	conn = iphonedisk::GetConnection(kMediaAFC);
 	[progress startAnimation:self];
 	[button setHidden:YES];
+
+//	manager = iphonedisk::NewManager(connect_cb, disconnect_cb);
+//	manager->SetDisconnectCallback(
+	
 //  [media setEnabled:NO];
 //  [root setEnabled:NO];
 }

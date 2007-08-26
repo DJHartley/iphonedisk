@@ -16,29 +16,21 @@ using namespace std;
 
 static struct fuse_operations iphone_oper;
 
-class Watcher {
- public:
-  Watcher(iphonedisk::Manager* manager) {
-    manager->SetDisconnectCallback(
-      ythread::NewCallback(this, &Watcher::Disconnect));
-  }
-
- private:
-  void Disconnect() {
-    cerr << "Device disconnected!" << endl;
-    exit(1);
-  }
-};
+static void Disconnect() {
+  cerr << "Device disconnected!" << endl;
+  exit(1);
+}
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
-  iphonedisk::Manager* manager = iphonedisk::NewManager();
+  iphonedisk::Manager* manager =
+      iphonedisk::NewManager(NULL,
+                             ythread::NewCallback(&Disconnect));
   if (manager == NULL) {
     cerr << "Unable to initialize connection to device";
     return 1;
   }
 
-  Watcher watcher(manager);
   cout << "Waiting for device..." << endl;
   if (!manager->WaitUntilConnected()) {
     cerr << "Error while waiting for device" << endl;
