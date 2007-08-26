@@ -75,7 +75,6 @@ class MounterImpl : public ythread::Thread, public Mounter {
         condvar_.Wait();  // Wait for Connect or Disconnect callback
       }
       if (!loop_) {
-cerr << "......." << endl;
         break;
       }
   

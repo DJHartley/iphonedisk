@@ -5,6 +5,7 @@
             CLASS = DiskController; 
             LANGUAGE = ObjC; 
             OUTLETS = {
+                button = id; 
                 media = NSButtonCell; 
                 partitionLabel = NSTextField; 
                 progress = NSProgressIndicator; 

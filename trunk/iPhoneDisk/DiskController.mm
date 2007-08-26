@@ -8,6 +8,7 @@
 
 - (IBAction)button:(id)sender
 {
+	[glue deviceConnected];
 }
 
 - (IBAction)mediaPressed:(id)sender
@@ -23,6 +24,13 @@
 	return ([media state] == NSOnState);
 }
 
+- (void)setShowPartitions:(BOOL)show
+{
+	NSRect rect = [window frame];
+	rect.size.width = show ? 291 : 184;
+	[window setFrame:rect display:YES];
+}
+
 - (void)deviceConnected:(id)sender
 {
 	[partitionLabel setHidden:YES];
@@ -30,9 +38,8 @@
 	[progress stopAnimation:self];
 	[progress setHidden:YES];
 	[statusLabel setTitleWithMnemonic:@"iPhone connected, Eject disk safely"];
-	NSRect rect = [window frame];
-	rect.size.width = 184;
-	[window setFrame:rect display:YES];
+	[self setShowPartitions:NO];
+	[button setHidden:YES];
 }
 
 - (void)deviceDisconnected:(id)sender
@@ -42,15 +49,25 @@
 	[progress startAnimation:self];
 	[progress setHidden:NO];
 	[statusLabel setTitleWithMnemonic:@"Waiting for iPhone..."];
-	NSRect rect = [window frame];
-	rect.size.width = 291;
-	[window setFrame:rect display:YES];
+	[self setShowPartitions:YES];
+	[button setHidden:YES];
+}
+
+- (void)deviceUnmounted:(id)sender
+{
+	[partitionLabel setHidden:NO];
+	[radio setHidden:NO];
+	[progress stopAnimation:self];
+	[progress setHidden:YES];
+	[statusLabel setTitleWithMnemonic:@"Connected; iPhone not mounted"];
+	[self setShowPartitions:YES];
+	[button setHidden:NO];
 }
 
 - (void)awakeFromNib
 {
 	[progress startAnimation:self];
-	[[FuseGlue alloc] initWithController:self];
+	glue = [[FuseGlue alloc] initWithController:self];
 }
 
 @end

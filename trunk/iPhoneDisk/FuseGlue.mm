@@ -87,9 +87,11 @@ static void UnmountCallback(FuseGlue* glue)
 #ifdef DEBUG
 	NSLog(@"Device unmounted");
 #endif
-	if (afc == NULL) {
-		NSLog(@"No AFC established?");
-		return;
+	mounter->Stop();
+	if (afc != NULL) {
+		[diskController performSelectorOnMainThread:@selector(deviceUnmounted:)
+									 withObject:diskController
+								  waitUntilDone:YES];
 	}
 }
 
