@@ -5,11 +5,13 @@
             CLASS = DiskController; 
             LANGUAGE = ObjC; 
             OUTLETS = {
-                button = NSButton; 
+                button = NSTextField; 
                 media = NSButtonCell; 
+                partitionLabel = NSTextField; 
                 progress = NSProgressIndicator; 
                 radio = NSMatrix; 
                 root = NSButtonCell; 
+                statusLabel = id; 
             }; 
             SUPERCLASS = NSObject; 
         }, 

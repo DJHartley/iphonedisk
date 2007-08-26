@@ -17,6 +17,10 @@ class Callback {
 
 Callback* NewCallback(void (*func)());
 
+// overload for additional arguments
+template<class ARG>
+Callback* NewCallback(void (*func)(), ARG arg);
+
 template <class CLASS>
 Callback* NewCallback(CLASS* object, void(CLASS::*func)());
 

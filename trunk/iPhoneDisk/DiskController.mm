@@ -2,41 +2,50 @@
 // Authors: Allen Porter <allen@thebends.org>
 
 #import "DiskController.h"
-#include "manager.h"
-
-static const NSString* kMediaAFC = @"com.apple.afc";
-static const NSString* kRootAFC = @"com.apple.afc2";
-static NSString* service = kMediaAFC;
-
-static iphonedisk::Manager* manager = NULL;
+#import "FuseGlue.h"
 
 @implementation DiskController
 
 - (IBAction)button:(id)sender
 {
-	NSLog(@"button");
 }
 
 - (IBAction)mediaPressed:(id)sender
 {
-	service = kMediaAFC;
 }
 
 - (IBAction)rootPressed:(id)sender
 {
-	service = kRootAFC;
+}
+
+- (BOOL)mediaPartition
+{
+	return ([media state] == NSOnState);
+}
+
+- (void)deviceConnected:(id)sender
+{
+	[media setEnabled:NO];
+	[root setEnabled:NO];
+	[progress stopAnimation:self];
+	[progress setHidden:YES];
+	[statusLabel setTitleWithMnemonic:@"iPhone connected"];
+}
+
+- (void)deviceDisconnected:(id)sender
+{
+	[media setEnabled:YES];
+	[root setEnabled:YES];
+	[progress startAnimation:self];
+	[progress setHidden:NO];
+	[statusLabel setTitleWithMnemonic:@"Waiting for iPhone..."];
 }
 
 - (void)awakeFromNib
 {
 	[progress startAnimation:self];
 	[button setHidden:YES];
-
-//	manager = iphonedisk::NewManager(connect_cb, disconnect_cb);
-//	manager->SetDisconnectCallback(
-	
-//  [media setEnabled:NO];
-//  [root setEnabled:NO];
+	[[FuseGlue alloc] initWithController:self];
 }
 
 @end

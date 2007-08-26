@@ -2,6 +2,27 @@
 
 namespace ythread {
 
+template <class ARG>
+class CallbackFuncArg1Impl : public Callback {
+ public:
+  CallbackFuncArg1Impl(void(*func)(ARG), ARG arg)
+    : func_(func), arg_(arg) { }
+  virtual ~CallbackFuncArg1Impl() { }
+
+  virtual void Execute() {
+    (*func_)(arg_);
+  }
+
+ private:
+  void(*func_)(ARG);
+  ARG arg_;
+};
+
+template <class ARG>
+Callback* NewCallback(void(*func)(ARG), ARG arg) {
+  return new CallbackFuncArg1Impl<ARG>(func, arg);
+}
+
 template <class CLASS>
 class CallbackImpl : public Callback {
  public:

@@ -14,8 +14,8 @@ all: iphonediskd iphonedisk_mount
 libythread.a:
 	cd ythread && make
 
-libiphonedisk.a: iphonedisk.o connection.o manager.o
-	$(AR) -r $@ iphonedisk.o connection.o manager.o
+libiphonedisk.a: iphonedisk.o connection.o manager.o mounter.o
+	$(AR) -r $@ iphonedisk.o connection.o manager.o mounter.o
 	$(RANLIB) $@
 
 iphonedisk_mount: iphonedisk_mount.o libiphonedisk.a libythread.a
