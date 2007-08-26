@@ -3,5 +3,9 @@ TODO: Stuff that would be nice to do
 - Improved documentation and Project Wikis
 - Installer + Binary distribution
   - Should detect if MacFUSE is installed, and tell how to install
-- Become a long running process with a control pannel, no GUI needed.
+
+GUI Application:
+- Warn if device was disconnected without being mounted first
+
+
 - Remove ythread package if possible
