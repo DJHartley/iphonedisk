@@ -53,7 +53,6 @@ static void UnmountCallback(FuseGlue* glue)
 #ifdef DEBUG
 	NSLog(@"Device connected");
 #endif
-
 	if ([diskController mediaPartition]) {
 		afc = manager->Open(kMediaAFC);
 	} else {
@@ -88,12 +87,9 @@ static void UnmountCallback(FuseGlue* glue)
 #endif
 	if (afc == NULL) {
 		NSLog(@"No AFC established?");
-		exit(1);
+		return;
 	}
 	//mounter->Stop();
-
-
-
 }
 
 - (void)deviceDisconnected

@@ -332,7 +332,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks/";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LINK_WITH_STANDARD_LIBRARIES = YES;
-				OTHER_CFLAGS = "-DDEBUG";
 				PREBINDING = NO;
 				USER_HEADER_SEARCH_PATHS = /usr/local/include;
 			};
@@ -344,7 +343,6 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks/";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LINK_WITH_STANDARD_LIBRARIES = YES;
-				OTHER_CFLAGS = "-DDEBUG";
 				PREBINDING = NO;
 				USER_HEADER_SEARCH_PATHS = /usr/local/include;
 			};
