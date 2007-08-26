@@ -17,7 +17,7 @@ namespace iphonedisk {
 
 class MounterImpl : public ythread::Thread, public Mounter {
  public:
-  MounterImpl() : fuse_(NULL), afc_(NULL), mutex_(), cb_(NULL),
+  MounterImpl() : fuse_(NULL), afc_(NULL), cb_(NULL), mutex_(),
                   condvar_(&mutex_), loop_(false) {
     ythread::Thread::Start();
 	ythread::MutexLock l(&mutex_);
