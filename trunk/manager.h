@@ -11,7 +11,6 @@
 #include <string>
 
 struct afc_connection;
-
 namespace ythread { class Callback; }
 
 namespace iphonedisk {
@@ -41,7 +40,6 @@ class Manager {
   Manager() { }
 };
 
-// Creates the (singleton) device Manager object. Not threadsafe
 Manager* NewManager();
 
 }  // namespace iphonedisk
