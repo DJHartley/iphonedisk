@@ -4,13 +4,13 @@
 
 @interface DiskController : NSObject
 {
-    IBOutlet NSButton *button;
     IBOutlet NSButtonCell *media;
     IBOutlet NSTextField *partitionLabel;
-	IBOutlet NSTextField *statusLabel;
     IBOutlet NSProgressIndicator *progress;
     IBOutlet NSMatrix *radio;
     IBOutlet NSButtonCell *root;
+    IBOutlet NSTextField *statusLabel;
+    IBOutlet NSWindow *window;
 }
 - (IBAction)button:(id)sender;
 - (IBAction)mediaPressed:(id)sender;

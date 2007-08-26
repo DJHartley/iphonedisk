@@ -50,6 +50,8 @@ static void UnmountCallback(FuseGlue* glue)
 
 - (void)deviceConnected
 {
+    [[NSAutoreleasePool alloc] init];
+
 #ifdef DEBUG
 	NSLog(@"Device connected");
 #endif
@@ -89,7 +91,6 @@ static void UnmountCallback(FuseGlue* glue)
 		NSLog(@"No AFC established?");
 		return;
 	}
-	//mounter->Stop();
 }
 
 - (void)deviceDisconnected

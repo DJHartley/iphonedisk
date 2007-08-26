@@ -25,26 +25,31 @@
 
 - (void)deviceConnected:(id)sender
 {
-	[media setEnabled:NO];
-	[root setEnabled:NO];
+	[partitionLabel setHidden:YES];
+	[radio setHidden:YES];
 	[progress stopAnimation:self];
 	[progress setHidden:YES];
-	[statusLabel setTitleWithMnemonic:@"iPhone connected"];
+	[statusLabel setTitleWithMnemonic:@"iPhone connected, Eject disk safely"];
+	NSRect rect = [window frame];
+	rect.size.width = 184;
+	[window setFrame:rect display:YES];
 }
 
 - (void)deviceDisconnected:(id)sender
 {
-	[media setEnabled:YES];
-	[root setEnabled:YES];
+	[partitionLabel setHidden:NO];
+	[radio setHidden:NO];
 	[progress startAnimation:self];
 	[progress setHidden:NO];
 	[statusLabel setTitleWithMnemonic:@"Waiting for iPhone..."];
+	NSRect rect = [window frame];
+	rect.size.width = 291;
+	[window setFrame:rect display:YES];
 }
 
 - (void)awakeFromNib
 {
 	[progress startAnimation:self];
-	[button setHidden:YES];
 	[[FuseGlue alloc] initWithController:self];
 }
 

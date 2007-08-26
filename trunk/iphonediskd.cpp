@@ -32,20 +32,17 @@ class Controller {
         ythread::NewCallback(this, &Controller::Connect),
         ythread::NewCallback(this, &Controller::Disconnect));
     mounter1_ = iphonedisk::NewMounter();
-//    mounter2_ = iphonedisk::NewMounter();
   }
 
   ~Controller() {
     delete manager_;
     delete mounter1_;
-//    delete mounter2_;
   }
 
  protected:
   void Disconnect() {
     cout << "iPhone disconnected" << endl;
     mounter1_->Stop();
-//    mounter2_->Stop();
   }
 
   void Connect() {
@@ -55,20 +52,11 @@ class Controller {
       cerr << "Opening " << SERVICE_MEDIA << " failed" << endl;
       exit(1);
     }
-/*
-    afc_connection* afc2 = manager_->Open(SERVICE_ROOT);
-    if (afc2 == NULL) {
-      cerr << "Opening " << SERVICE_ROOT << " failed" << endl;
-      exit(1);
-    }
-*/
     mounter1_->Start(afc1, VOLNAME_MEDIA, ICON);
-//    mounter2_->Start(afc2, VOLNAME_ROOT);
   }
 
   iphonedisk::Manager* manager_;
   iphonedisk::Mounter* mounter1_;
-  iphonedisk::Mounter* mounter2_;
 };
 
 int main(int argc, char* argv[]) {
