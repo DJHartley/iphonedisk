@@ -1,5 +1,10 @@
 CHANGELOG
 
+2007/08/26 - allen
+- First GUI binary release, though still considered unstable. Test it out and
+  give some feedback. NOTE: You must already have MacFUSE installed.
+  TODO: Installer.
+
 2007/08/10 - allen
 - Added standalone daemon that will automount the phone when connected.  Should
   later be controlled by a GUI.
