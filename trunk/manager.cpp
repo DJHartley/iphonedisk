@@ -92,9 +92,6 @@ class ManagerImpl : public ythread::Thread, public Manager {
     // Make a copy of the callback so that it is run without the mutex held
     ythread::Callback* cb = NULL;
     mutex_.Lock(); 
-#ifdef DEBUG
-    cout << "Got Lock" << endl;
-#endif
     if (info->msg == ADNCI_MSG_CONNECTED && device_ == NULL) {
       device_ = info->dev;
       if (!InitializeDevice(device_)) {

@@ -58,10 +58,20 @@ class MounterImpl : public ythread::Thread, public Mounter {
     ythread::MutexLock l(&mutex_);
     afc_ = NULL;
     if (fuse_ != NULL) {
+#ifdef DEBUG
+      cerr << "Mounter::Run fuse_unmount" << endl;
+#endif
+      fuse_unmount(mount_path_.c_str(), chan_);
+#ifdef DEBUG
+      cerr << "Mounter::Run fuse_exit" << endl;
+#endif
       fuse_exit(fuse_);
     }
     loop_ = !stop_loop;
     condvar_.SignalAll();
+#ifdef DEBUG
+      cerr << "Mounter::Shutdown ended" << endl;
+#endif
   }
 
   virtual void Run() {
@@ -97,45 +107,46 @@ class MounterImpl : public ythread::Thread, public Mounter {
         fuse_opt_add_arg(&args_, volicon_arg.c_str());
       }
  
-      iphonedisk::InitFuseConfig(conn, &operations_);
-
-      string mount_path("/Volumes/");
-      mount_path.append(volume_);
+      mount_path_ = "/Volumes/";
+      mount_path_.append(volume_);
       // Ignore errors
-      rmdir(mount_path.c_str());
-      mkdir(mount_path.c_str(), S_IFDIR|0755);
+      rmdir(mount_path_.c_str());
+      mkdir(mount_path_.c_str(), S_IFDIR|0755);
 
-      struct fuse_chan* chan = fuse_mount(mount_path.c_str(), &args_);
-      if (chan == NULL) {
+      chan_ = fuse_mount(mount_path_.c_str(), &args_);
+      if (chan_ == NULL) {
         cerr << "fuse_mount() failed" << endl;
         exit(1);
       }
-      fuse_ = fuse_new(chan, &args_, &operations_, sizeof(operations_), NULL);
+
+      iphonedisk::InitFuseConfig(conn, &operations_);
+      fuse_ = fuse_new(chan_, &args_, &operations_, sizeof(operations_), NULL);
       if (fuse_ == NULL) {
-        fuse_unmount(mount_path.c_str(), chan);
+        fuse_unmount(mount_path_.c_str(), chan_);
         cerr << "fuse_new() failed" << endl;
         exit(1);
       }
       mutex_.Unlock();
       fuse_loop(fuse_);
+#ifdef DEBUG
+      cerr << "Mounter::Run fuse_loop ended" << endl;
+#endif
 
       ythread::Callback* cb = NULL;
-
       mutex_.Lock();
       afc_ = NULL;
       cb = cb_;
       cb_ = NULL;
+      fuse_destroy(fuse_);
+      fuse_ = NULL;
       mutex_.Unlock();
+
       if (cb != NULL) {
         cb->Execute();
         delete cb;
       }
+
       mutex_.Lock();
-      // TODO: This call can take a long time when the iphone has already been
-      // disconnected.  Investigate this.
-      fuse_unmount(mount_path.c_str(), chan);
-      fuse_destroy(fuse_);
-      fuse_ = NULL;
     }
     mutex_.Unlock();
 #ifdef DEBUG
@@ -146,9 +157,11 @@ class MounterImpl : public ythread::Thread, public Mounter {
   struct fuse_operations operations_;
   struct fuse_args args_;
   struct fuse* fuse_;
+  struct fuse_chan* chan_;
   afc_connection* afc_;
   string volume_;
   string volicon_;
+  string mount_path_;
   ythread::Callback* cb_;
   ythread::Mutex mutex_;
   ythread::CondVar condvar_;

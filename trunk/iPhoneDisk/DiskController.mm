@@ -37,7 +37,7 @@
 	[radio setHidden:YES];
 	[progress stopAnimation:self];
 	[progress setHidden:YES];
-	[statusLabel setTitleWithMnemonic:@"iPhone connected, Eject disk safely"];
+	[statusLabel setTitleWithMnemonic:@"Connected"];
 	[self setShowPartitions:NO];
 	[button setHidden:YES];
 }
@@ -66,7 +66,7 @@
 
 - (void)awakeFromNib
 {
-	[progress startAnimation:self];
+	[self deviceDisconnected:self];
 	glue = [[FuseGlue alloc] initWithController:self];
 }
 

@@ -64,7 +64,9 @@ int main(int argc, char* argv[]) {
   Controller controller;
 
   // Loop forever? sure
-  select(0, NULL, NULL, NULL, NULL);
+  while (1) {
+    select(0, NULL, NULL, NULL, NULL);
+  }
 
   return 0;
 }
