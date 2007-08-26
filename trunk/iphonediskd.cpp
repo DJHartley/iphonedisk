@@ -6,14 +6,22 @@
 // TODO: Catch signals and shutdown fuse fonnection if started
 
 #include <iostream>
+#include <sys/wait.h>
+#include <sys/types.h>
+
 #include "ythread/callback-inl.h"
+
 #include <CoreFoundation/CoreFoundation.h>
 #include "mounter.h"
 #include "manager.h"
 
-// TODO: Make this a command line or config parameter
-#define VOLNAME "iPhone"
-#define SERVICE "com.apple.afc"
+#define VOLNAME_MEDIA "Media"
+#define SERVICE_MEDIA "com.apple.afc"
+
+#define VOLNAME_ROOT "Root"
+#define SERVICE_ROOT "com.apple.afc2"
+
+#define ICON "./iPhoneDisk.icns"
 
 using namespace std;
 
@@ -23,37 +31,52 @@ class Controller {
     manager_ = iphonedisk::NewManager(
         ythread::NewCallback(this, &Controller::Connect),
         ythread::NewCallback(this, &Controller::Disconnect));
-    mounter_ = iphonedisk::NewMounter();
+    mounter1_ = iphonedisk::NewMounter();
+//    mounter2_ = iphonedisk::NewMounter();
   }
 
   ~Controller() {
     delete manager_;
-    delete mounter_;
+    delete mounter1_;
+//    delete mounter2_;
   }
 
  protected:
   void Disconnect() {
     cout << "iPhone disconnected" << endl;
-    mounter_->Stop();
+    mounter1_->Stop();
+//    mounter2_->Stop();
   }
 
   void Connect() {
     cout << "iPhone connected" << endl;
-    afc_connection* afc = manager_->Open(SERVICE);
-    if (afc == NULL) {
-      cerr << "Opening " << SERVICE << " failed" << endl;
+    afc_connection* afc1 = manager_->Open(SERVICE_MEDIA);
+    if (afc1 == NULL) {
+      cerr << "Opening " << SERVICE_MEDIA << " failed" << endl;
       exit(1);
     }
-    mounter_->Start(afc, VOLNAME);
+/*
+    afc_connection* afc2 = manager_->Open(SERVICE_ROOT);
+    if (afc2 == NULL) {
+      cerr << "Opening " << SERVICE_ROOT << " failed" << endl;
+      exit(1);
+    }
+*/
+    mounter1_->Start(afc1, VOLNAME_MEDIA, ICON);
+//    mounter2_->Start(afc2, VOLNAME_ROOT);
   }
 
   iphonedisk::Manager* manager_;
-  iphonedisk::Mounter* mounter_;
+  iphonedisk::Mounter* mounter1_;
+  iphonedisk::Mounter* mounter2_;
 };
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
   Controller controller;
-  CFRunLoopRun();
-  cout << "Program exited.";
+
+  // Loop forever? sure
+  select(0, NULL, NULL, NULL, NULL);
+
+  return 0;
 }

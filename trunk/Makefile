@@ -2,7 +2,7 @@ CC = g++
 AR = ar
 RANLIB = ranlib
 CCFLAGS = -Wall -Werror -D_FILE_OFFSET_BITS=64 -D__FreeBSD__=10 \
-          -DFUSE_USE_VERSION=26
+          -DFUSE_USE_VERSION=26 -DDEBUG
 LDFLAGS = -lfuse -framework CoreFoundation -F/System/Library/PrivateFrameworks \
           -framework MobileDevice -Lythread -lythread -L. -liphonedisk
 

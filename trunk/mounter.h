@@ -15,8 +15,8 @@ class Mounter {
   // cb is invoked when the drive is unmounted.
   virtual void Start(afc_connection* handle,
                      const std::string& volume,
-					 const std::string& volicon = "",
-					 ythread::Callback* cb = NULL) = 0;
+                     const std::string& volicon = "",
+                     ythread::Callback* cb = NULL) = 0;
   virtual void Stop() = 0;
 
  protected:

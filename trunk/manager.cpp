@@ -1,9 +1,4 @@
-// manager.cpp
-// Authors: Allen Porter <allen@thebends.org>
-//          Scott Turner <scottturner007@gmail.com>
-
 #include "ythread/callback-inl.h"
-
 #include "manager.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <iostream>
@@ -28,18 +23,29 @@ class ManagerImpl : public ythread::Thread, public Manager {
       device_(NULL),
       connect_cb_(connect_cb),
       disconnect_cb_(disconnect_cb),
-      loop_(NULL) { }
+      loop_(NULL) {
+    Start();
+  }
 
   virtual ~ManagerImpl() {
-    // Wait until the thread is started before trying to destroy, otherwise
-    // theres a race condition here
+#ifdef DEBUG
+    cout << "Manager::Dtor" << endl;
+#endif
     ythread::MutexLock l(&mutex_);
-    while (loop_ == NULL) {
-      CFRunLoopStop(loop_);
+    while (!done_) {
+      if (loop_ != NULL) {
+        CFRunLoopStop(loop_);
+      }
+      mutex_.Unlock();
+      usleep(10 * 1000);
+      mutex_.Lock();
     }
     Join();
     delete connect_cb_;
     delete disconnect_cb_;
+#ifdef DEBUG
+    cout << "Manager::Dtor done" << endl;
+#endif
   }
 
   virtual bool WaitUntilConnected() {
@@ -51,6 +57,9 @@ class ManagerImpl : public ythread::Thread, public Manager {
   }
 
   afc_connection* Open(const string& service) {
+#ifdef DEBUG
+    cout << "Manager::Open" << endl;
+#endif
     ythread::MutexLock l(&mutex_);
     if (device_ == NULL) {
       return NULL;
@@ -77,9 +86,15 @@ class ManagerImpl : public ythread::Thread, public Manager {
 
   // Invoked by the static helper method notify_callback
   void Notify(am_device_notification_callback_info *info) {
+#ifdef DEBUG
+    cout << "Manager::Notify" << endl;
+#endif
     // Make a copy of the callback so that it is run without the mutex held
     ythread::Callback* cb = NULL;
     mutex_.Lock(); 
+#ifdef DEBUG
+    cout << "Got Lock" << endl;
+#endif
     if (info->msg == ADNCI_MSG_CONNECTED && device_ == NULL) {
       device_ = info->dev;
       if (!InitializeDevice(device_)) {
@@ -103,6 +118,9 @@ class ManagerImpl : public ythread::Thread, public Manager {
 
  protected:
   virtual void Run() {
+#ifdef DEBUG
+    cout << "Manager::Run" << endl;
+#endif
     mutex_.Lock();
     loop_ = CFRunLoopGetCurrent();
     am_device_notification *notif;
@@ -112,9 +130,14 @@ class ManagerImpl : public ythread::Thread, public Manager {
       cerr << "AMDeviceNotificationSubscribe: " << ret << endl;
       return;
     }
-    condvar_.SignalAll();
     mutex_.Unlock();  // Wake constructor
+#ifdef DEBUG
+    cout << "Manager::Run looping" << endl;
+#endif
     CFRunLoopRun();
+#ifdef DEBUG
+    cout << "Manager::Run loop done" << endl;
+#endif
     done_ = true;
   } 
 
@@ -159,9 +182,7 @@ static void notify_callback(am_device_notification_callback_info *info,
 
 Manager* NewManager(ythread::Callback* connect_cb,
                     ythread::Callback* disconnect_cb) {
-  ManagerImpl* manager = new ManagerImpl(connect_cb, disconnect_cb);
-  manager->Start();
-  return manager;
+  return new ManagerImpl(connect_cb, disconnect_cb);
 }
 
 };

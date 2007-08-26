@@ -51,7 +51,7 @@ class Connection {
   virtual bool ReadFile(unsigned long long rAFC, char* data,size_t size,
                         off_t offset) = 0;
   virtual bool WriteFile(unsigned long long rAFC, const char* data,
-			 size_t size, off_t offset) = 0;
+                         size_t size, off_t offset) = 0;
 
  protected:
   // cannot be instantiated directly

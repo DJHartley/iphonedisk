@@ -160,7 +160,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool ReadFile(unsigned long long rAFC, char* data,
-			size_t size, off_t offset) {
+                        size_t size, off_t offset) {
     int ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
     if (ret != 0) {
       cerr << "AFCFileRefSeek: " << ret << endl;
@@ -176,7 +176,7 @@ class ConnectionImpl : public Connection {
   }
 
   virtual bool WriteFile(unsigned long long rAFC, const char* data,
-			 size_t size, off_t offset) {
+                         size_t size, off_t offset) {
     if (size > 0) {
       int ret = AFCFileRefSeek(hAFC_, rAFC, offset, 0);
       if (ret != 0) {
