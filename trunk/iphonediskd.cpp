@@ -9,20 +9,23 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include "iphonedisk.h"
 #include "connection.cpp"
+#include "manager.cpp"
 #include "ythread/callback.h"
+#include "ythread/thread.h"
 #include "ythread/mutex.h"
 #include "ythread/condvar.h"
 
 // TODO: Make this a command line or config parameter
 #define MOUNT_POINT "/Volumes/iPhone"
-#define SERVICE "com.service.afc"
+#define SERVICE "com.apple.afc"
 
 class FuseThread : public ythread::Thread {
  public:
-  FuseThread(iphonedisk::Connection* conn)
+  FuseThread(iphonedisk::Manager* manager)
       : fuse_(NULL),
-        conn_(conn),
+        manager_(manager),
         connected_(false),
+        afc_(NULL),
         mutex_(),
         condvar_(&mutex_) { }
 
@@ -36,29 +39,36 @@ class FuseThread : public ythread::Thread {
   }
 
   void Connect() {
-#ifdef DEBUG
     cout << "iPhone connected" << endl;
-#endif
     ythread::MutexLock l(&mutex_);
+    afc_ = manager_->Open(SERVICE);
+    if (afc_ == NULL) {
+      cerr << "Opening " << SERVICE << " failed" << endl;
+      exit(1);
+    }
     condvar_.Signal();  // Wake Run()
   }
 
   virtual void Run() {
     mutex_.Lock();
-    conn_->SetConnectCallback(NewCallback(this, &FuseThread::Connect));
-    conn_->SetDisconnectCallback(NewCallback(this, &FuseThread::Disconnect));
+    manager_->SetConnectCallback(NewCallback(this, &FuseThread::Connect));
+    manager_->SetDisconnectCallback(NewCallback(this, &FuseThread::Disconnect));
     while (1) {
       cout << "Waiting for connection..." << endl;
       condvar_.Wait();  // Wait for Connect or Disconnect callback
 
+      iphonedisk::Connection* conn = iphonedisk::NewConnection(afc_);
+
       cout << "Initializing" << endl;
       args_ = (struct fuse_args)FUSE_ARGS_INIT(0, NULL);
       fuse_opt_add_arg(&args_, "-d");
+#ifdef DEBUG
       fuse_opt_add_arg(&args_, "-odebug");
+#endif
       fuse_opt_add_arg(&args_, "-odefer_auth");
       fuse_opt_add_arg(&args_, "-ovolname=iPhone");
       fuse_opt_add_arg(&args_, "-ovolicon=./iPhoneDisk.icns");
-      iphonedisk::InitFuseConfig(conn_, &operations_);
+      iphonedisk::InitFuseConfig(conn, &operations_);
 
       // Ignore errors
       rmdir(MOUNT_POINT);
@@ -92,22 +102,23 @@ class FuseThread : public ythread::Thread {
   struct fuse_operations operations_;
   struct fuse_args args_;
   struct fuse* fuse_;
-  iphonedisk::Connection* conn_;
+  iphonedisk::Manager* manager_;
   bool connected_;
+  afc_connection* afc_;
   ythread::Mutex mutex_;
   ythread::CondVar condvar_;
 };
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
-  iphonedisk::Connection* conn = iphonedisk::GetConnection(SERVICE);
-  if (conn == NULL) {
+  iphonedisk::Manager* manager = iphonedisk::NewManager();
+  if (manager == NULL) {
     cerr << "Unable to initialize" << endl;
     return 1;
   } 
-  ythread::Thread* t = new FuseThread(conn);
+  ythread::Thread* t = new FuseThread(manager);
   t->Start();
   t->Join();
-  delete conn;
+  delete manager;
   cout << "Program exited.";
 }

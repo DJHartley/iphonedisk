@@ -2,7 +2,7 @@ CC = g++
 AR = ar
 RANLIB = ranlib
 CCFLAGS = -Wall -Werror -D_FILE_OFFSET_BITS=64 -D__FreeBSD__=10 \
-          -DFUSE_USE_VERSION=26 -DDEBUG
+          -DFUSE_USE_VERSION=26
 LDFLAGS = -lfuse -framework CoreFoundation -F/System/Library/PrivateFrameworks \
           -framework MobileDevice -Lythread -lythread -L. -liphonedisk
 
@@ -14,8 +14,8 @@ all: iphonediskd iphonedisk_mount
 libythread.a:
 	cd ythread && make
 
-libiphonedisk.a: iphonedisk.o connection.o
-	$(AR) -r $@ iphonedisk.o connection.o
+libiphonedisk.a: iphonedisk.o connection.o manager.o
+	$(AR) -r $@ iphonedisk.o connection.o manager.o
 	$(RANLIB) $@
 
 iphonedisk_mount: iphonedisk_mount.o libiphonedisk.a libythread.a

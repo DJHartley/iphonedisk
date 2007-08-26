@@ -205,7 +205,7 @@ static int iphone_read(const char *path, char *buf, size_t size, off_t offset,
   }
 
 #ifdef DEBUG
-  cout << "[*] read " << size << " bytes";
+  cout << "[*] read " << size << " bytes" << endl;
 #endif
   return size;
 }
@@ -228,7 +228,7 @@ static int iphone_write(const char *path, const char *buf, size_t size,
     return -ENOENT;
   }
 
-  cout << "[*] wrote " << size << " bytes\n";
+  cout << "[*] wrote " << size << " bytes\n" << endl;
   return size;
 }
 

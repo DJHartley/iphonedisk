@@ -7,7 +7,9 @@
 // See http://iphone.fiveforty.net/wiki/
 // 
 // The default Connection implementation uses AFC to read and write files on
-// the iPhone filesystem.
+// the iPhone filesystem.  An AFC connection handle can be created with a
+// iphonedisk::Manager object, and is passed to the GetConnection() method
+// to create a new Connection object, wraping the AFC handle.
 
 #ifndef __CONNECTION_H__
 #define __CONNECTION_H__
@@ -17,6 +19,7 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
+struct afc_connection;
 namespace ythread { class Callback; }
 
 namespace iphonedisk {
@@ -25,18 +28,6 @@ namespace iphonedisk {
 class Connection {
  public:
   virtual ~Connection() { }
-
-  // Should be invoked before using the connection
-  virtual bool WaitUntilConnected() = 0;
-  
-  virtual void SetService(const std::string& service) = 0;
-
-  // Async notifications of connection and disconnection events.  May be
-  // invoked from an internal connection thread.
-  virtual void SetDisconnectCallback(ythread::Callback* cb) = 0;
-  virtual void SetConnectCallback(ythread::Callback* cb) = 0;
-
-  // All methods below return true on success and false on failure.
 
   //
   // Reading properties of files/directories
@@ -67,16 +58,8 @@ class Connection {
   Connection() { }
 };
 
-// Creates the Connection object.   The return value is NULL if a
-// non-recoverable error occurred during initialization (registering with the
-// MobileDevice framework, for example).
-//
-// The service should be an AFC service name running on the iPhone, usually:
-//   com.apple.afc   Media directory
-//   com.apple.afc2  Root directory
-//
-// This function can only be called once.
-Connection* GetConnection(const std::string& service);
+// Creates the Connection object.
+Connection* NewConnection(afc_connection* handle);
 
 }  // namespace
 

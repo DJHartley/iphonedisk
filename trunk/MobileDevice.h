@@ -100,7 +100,7 @@ struct am_restore_device {
 
 /* The type of the device notification callback function. */
 typedef void(*am_device_notification_callback)(struct
-    am_device_notification_callback_info *);
+    am_device_notification_callback_info *, void* arg);
 
 /* The type of the _AMDDeviceAttached function.
  * TODO: change to correct type. */
@@ -193,7 +193,7 @@ struct am_bootloader_control_packet {
  */
 
 mach_error_t AMDeviceNotificationSubscribe(am_device_notification_callback
-    callback, unsigned int unused0, unsigned int unused1, unsigned int
+    callback, unsigned int unused0, unsigned int unused1, void* //unsigned int
     dn_unknown3, struct am_device_notification **notification);
 
 /*  Connects to the iPhone. Pass in the am_device structure that the
@@ -469,37 +469,6 @@ usbmux_error_t USBMuxListenerHandleData(void *);
 
 typedef unsigned int (*t_performOperation)(struct am_restore_device *rdev,
     CFDictionaryRef op); // __attribute__ ((regparm(2)));
- t_performOperation _performOperation = (t_performOperation)0x3c3a0e14; //0x3c39fa4b;
-/* ----------------------------------------------------------------------------
- *   Less-documented private routines
- * ------------------------------------------------------------------------- */
-
-typedef int (*t_socketForPort)(struct am_restore_device *rdev, unsigned int port);
-    //__attribute__ ((regparm(2)));
-t_socketForPort _socketForPort = (t_socketForPort)(void *)0x3c39f36c;
-
-typedef void (*t_restored_send_message)(int port, CFDictionaryRef msg);
-t_restored_send_message _restored_end_message = (t_restored_send_message)0x3c3a4e40;
-
-typedef CFDictionaryRef (*t_restored_receive_message)(int port);
-t_restored_receive_message _restored_receive_message = (t_restored_receive_message)0x3c3a4d40;
-
-typedef unsigned int (*t_sendControlPacket)(struct am_recovery_device *rdev, unsigned
-    int msg1, unsigned int msg2, unsigned int unknown0, unsigned int *unknown1,
-    unsigned char *unknown2); // __attribute__ ((regparm(3)));
-t_sendControlPacket _sendControlPacket = (t_sendControlPacket)0x3c3a3da3;;
-
-typedef unsigned int (*t_sendCommandToDevice)(struct am_recovery_device *rdev,
-    CFStringRef cmd); // __attribute__ ((regparm(2)));
-t_sendCommandToDevice _sendCommandToDevice = (t_sendCommandToDevice)0x3c3a3e3b;
-
-typedef unsigned int (*t_AMRUSBInterfaceReadPipe)(unsigned int readwrite_pipe, unsigned
-    int read_pipe, unsigned char *data, unsigned int *len);
-t_AMRUSBInterfaceReadPipe _AMRUSBInterfaceReadPipe = (t_AMRUSBInterfaceReadPipe)0x3c3a27e8;
-
-typedef unsigned int (*t_AMRUSBInterfaceWritePipe)(unsigned int readwrite_pipe, unsigned
-    int write_pipe, void *data, unsigned int len);
-t_AMRUSBInterfaceWritePipe _AMRUSBInterfaceWritePipe = (t_AMRUSBInterfaceWritePipe)0x3c3a27cb;
 
 #ifdef __cplusplus
 }

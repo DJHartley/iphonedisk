@@ -6,17 +6,20 @@
 // accompanying mount.sh shell script for reasonable default flags that should
 // be provided to mac fuse.
 
+#include "ythread/callback-inl.h"
+#include <iostream>
+#include "connection.h"
 #include "iphonedisk.h"
-#include "connection.cpp"
+#include "manager.h"
 
-#define SERVICE "com.apple.afc"
+using namespace std;
 
 static struct fuse_operations iphone_oper;
 
 class Watcher {
  public:
-  Watcher(iphonedisk::Connection* conn) {
-    conn->SetDisconnectCallback(
+  Watcher(iphonedisk::Manager* manager) {
+    manager->SetDisconnectCallback(
       ythread::NewCallback(this, &Watcher::Disconnect));
   }
 
@@ -29,18 +32,25 @@ class Watcher {
 
 int main(int argc, char* argv[]) {
   cout << "Initializaing." << endl;
-  iphonedisk::Connection* conn = iphonedisk::GetConnection(SERVICE);
-  if (conn == NULL) {
+  iphonedisk::Manager* manager = iphonedisk::NewManager();
+  if (manager == NULL) {
     cerr << "Unable to initialize connection to device";
     return 1;
   }
 
-  Watcher watcher(conn);
+  Watcher watcher(manager);
   cout << "Waiting for device..." << endl;
-  if (!conn->WaitUntilConnected()) {
-    cerr << "Unable to connect to device" << endl;
-    exit(1);
+  if (!manager->WaitUntilConnected()) {
+    cerr << "Error while waiting for device" << endl;
+    return 1;
   }
+
+  afc_connection* afc = manager->Open("com.apple.afc");
+  if (afc == NULL) {
+    cerr << "Unable to initialize connection to service";
+    return 1;
+  }
+  iphonedisk::Connection* conn = iphonedisk::NewConnection(afc);
 
   cout << "Initializing filesystem." << endl;
   iphonedisk::InitFuseConfig(conn, &iphone_oper);
