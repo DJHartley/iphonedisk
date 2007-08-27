@@ -121,7 +121,9 @@ static int iphone_open(const char *path, struct fuse_file_info *fi) {
 #endif
 
   fi->fh = conn->OpenFile(path, ((fi->flags & 1) == 1) ? 3 : 2);
+#ifdef DEBUG
   cout << "file handle: " << fi->fh << endl;
+#endif
 
   if (fi->fh == 0) {
     return -ENOENT;

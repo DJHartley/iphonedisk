@@ -13,60 +13,56 @@
 
 - (IBAction)mediaPressed:(id)sender
 {
+	mediaPartitionSelected = YES;
+	[mediaMenuItem setState:NSOnState];
+	[rootMenuItem setState:NSOffState];
+	[statusItem setToolTip:@"iPhoneDisk:/Volumes/Media"];
+	[glue deviceReload];
 }
 
 - (IBAction)rootPressed:(id)sender
 {
+	mediaPartitionSelected = NO;
+	[mediaMenuItem setState:NSOffState];
+	[rootMenuItem setState:NSOnState];
+	[statusItem setToolTip:@"iPhoneDisk:/Volumes/Root"];
+	[glue deviceReload];
+}
+
+- (IBAction)quitPressed:(id)sender
+{
+	[glue deviceDisconnected];
+	exit(0);
 }
 
 - (BOOL)mediaPartition
 {
-	return ([media state] == NSOnState);
-}
-
-- (void)setShowPartitions:(BOOL)show
-{
-	NSRect rect = [window frame];
-	rect.size.width = show ? 291 : 184;
-	[window setFrame:rect display:YES];
-}
-
-- (void)deviceConnected:(id)sender
-{
-	[partitionLabel setHidden:YES];
-	[radio setHidden:YES];
-	[progress stopAnimation:self];
-	[progress setHidden:YES];
-	[statusLabel setTitleWithMnemonic:@"Connected"];
-	[self setShowPartitions:NO];
-	[button setHidden:YES];
-}
-
-- (void)deviceDisconnected:(id)sender
-{
-	[partitionLabel setHidden:NO];
-	[radio setHidden:NO];
-	[progress startAnimation:self];
-	[progress setHidden:NO];
-	[statusLabel setTitleWithMnemonic:@"Waiting for iPhone..."];
-	[self setShowPartitions:YES];
-	[button setHidden:YES];
-}
-
-- (void)deviceUnmounted:(id)sender
-{
-	[partitionLabel setHidden:NO];
-	[radio setHidden:NO];
-	[progress stopAnimation:self];
-	[progress setHidden:YES];
-	[statusLabel setTitleWithMnemonic:@"Connected; iPhone not mounted"];
-	[self setShowPartitions:YES];
-	[button setHidden:NO];
+	return mediaPartitionSelected;
 }
 
 - (void)awakeFromNib
 {
-	[self deviceDisconnected:self];
+	statusItem = [[[NSStatusBar systemStatusBar] 
+      statusItemWithLength:NSVariableStatusItemLength]
+      retain];
+	  
+	NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+	NSString *path = [bundle pathForResource:@"MenuItem" ofType:@"tif"];
+	menuIcon = [[NSImage alloc] initWithContentsOfFile:path];
+
+	[statusItem setTitle:[NSString stringWithString:@""]];
+	[statusItem setImage:menuIcon];
+	[statusItem setHighlightMode:YES];
+	[statusItem setEnabled:YES];
+	[statusItem setMenu:statusMenu];
+
+
+	// Default; use media partition
+	mediaPartitionSelected = YES;
+	[mediaMenuItem setState:NSOnState];
+	[rootMenuItem setState:NSOffState];
+	[statusItem setToolTip:@"iPhoneDisk:/Volumes/Media"];	
+
 	glue = [[FuseGlue alloc] initWithController:self];
 }
 

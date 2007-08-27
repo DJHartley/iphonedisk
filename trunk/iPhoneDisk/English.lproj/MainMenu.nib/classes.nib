@@ -1,17 +1,21 @@
 {
     IBClasses = (
         {
-            ACTIONS = {button = id; mediaPressed = id; rootPressed = id; }; 
+            ACTIONS = {button = id; mediaPressed = id; quitPressed = id; rootPressed = id; }; 
             CLASS = DiskController; 
             LANGUAGE = ObjC; 
             OUTLETS = {
                 button = id; 
                 media = NSButtonCell; 
+                mediaMenuItem = id; 
                 partitionLabel = NSTextField; 
                 progress = NSProgressIndicator; 
+                quitMenuItem = id; 
                 radio = NSMatrix; 
                 root = NSButtonCell; 
+                rootMenuItem = id; 
                 statusLabel = NSTextField; 
+                statusMenu = id; 
                 window = NSWindow; 
             }; 
             SUPERCLASS = NSObject; 

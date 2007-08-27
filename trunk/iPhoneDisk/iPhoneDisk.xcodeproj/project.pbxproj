@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		2C34FD180C8161CD001C1331 /* mounter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C34FD160C8161CD001C1331 /* mounter.cpp */; };
+		2C3A295C0C826538008B835A /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2C3A295A0C826538008B835A /* MainMenu.nib */; };
+		2C3A29B90C826918008B835A /* MenuItem.tif in Resources */ = {isa = PBXBuildFile; fileRef = 2C3A29B80C826918008B835A /* MenuItem.tif */; };
 		2C4D25DF0C8166E7008712DA /* libfuse.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C4D25DE0C8166E7008712DA /* libfuse.dylib */; };
 		2C793F6F0C80105D009E122B /* connection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C793F6A0C80105D009E122B /* connection.cpp */; };
 		2C793F700C80105D009E122B /* iphonedisk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C793F6C0C80105D009E122B /* iphonedisk.cpp */; };
@@ -21,7 +23,6 @@
 		2CB7CFA70C7FFC3A00569EC9 /* iPhoneDisk.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2CB7CFA60C7FFC3A00569EC9 /* iPhoneDisk.icns */; };
 		2CB7CFAA0C80093800569EC9 /* DiskController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7CFA90C80093800569EC9 /* DiskController.mm */; };
 		2CEFFD270C80AA5300BFB97E /* MobileDevice.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CEFFD260C80AA5300BFB97E /* MobileDevice.framework */; };
-		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
@@ -32,11 +33,12 @@
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		2C34FD160C8161CD001C1331 /* mounter.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = mounter.cpp; path = ../mounter.cpp; sourceTree = SOURCE_ROOT; };
 		2C34FD170C8161CD001C1331 /* mounter.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = mounter.h; path = ../mounter.h; sourceTree = SOURCE_ROOT; };
+		2C3A295B0C826538008B835A /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
+		2C3A29B80C826918008B835A /* MenuItem.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = MenuItem.tif; sourceTree = "<group>"; };
 		2C4D25DE0C8166E7008712DA /* libfuse.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfuse.dylib; path = /usr/local/lib/libfuse.dylib; sourceTree = "<absolute>"; };
 		2C793F6A0C80105D009E122B /* connection.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = connection.cpp; path = ../connection.cpp; sourceTree = SOURCE_ROOT; };
 		2C793F6B0C80105D009E122B /* connection.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = connection.h; path = ../connection.h; sourceTree = SOURCE_ROOT; };
@@ -153,9 +155,10 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				2C3A29B80C826918008B835A /* MenuItem.tif */,
+				2C3A295A0C826538008B835A /* MainMenu.nib */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
-				29B97318FDCFA39411CA2CEA /* MainMenu.nib */,
 				2CB7CFA60C7FFC3A00569EC9 /* iPhoneDisk.icns */,
 			);
 			name = Resources;
@@ -230,9 +233,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				2CB7CFA70C7FFC3A00569EC9 /* iPhoneDisk.icns in Resources */,
+				2C3A295C0C826538008B835A /* MainMenu.nib in Resources */,
+				2C3A29B90C826918008B835A /* MenuItem.tif in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,10 +273,10 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		29B97318FDCFA39411CA2CEA /* MainMenu.nib */ = {
+		2C3A295A0C826538008B835A /* MainMenu.nib */ = {
 			isa = PBXVariantGroup;
 			children = (
-				29B97319FDCFA39411CA2CEA /* English */,
+				2C3A295B0C826538008B835A /* English */,
 			);
 			name = MainMenu.nib;
 			sourceTree = "<group>";

@@ -19,5 +19,6 @@ namespace iphonedisk { class Mounter; }
 - (void)deviceConnected;
 - (void)deviceDisconnected;
 - (void)deviceUnmounted;
+- (void)deviceReload;
 
 @end

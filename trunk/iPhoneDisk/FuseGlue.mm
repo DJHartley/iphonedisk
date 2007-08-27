@@ -61,8 +61,8 @@ static void UnmountCallback(FuseGlue* glue)
 		afc = manager->Open(kRootAFC);
 	}
 	if (afc == NULL) {
-		NSLog(@"No AFC connection available");
-		exit(1);
+		NSLog(@"AFC not available; Ignoring error");
+		return;
 	}
 	
 	NSBundle *thisBundle = [NSBundle bundleForClass:[self class]];
@@ -77,9 +77,15 @@ static void UnmountCallback(FuseGlue* glue)
 	} else {
 		mounter->Start(afc, kRootLabel, volicon, unmount_cb);
 	}
-	[diskController performSelectorOnMainThread:@selector(deviceConnected:)
-									 withObject:diskController
-								  waitUntilDone:YES];
+}
+
+- (void)deviceReload
+{
+	if (afc == NULL) {
+		return;	
+	}
+	[self deviceDisconnected];
+	[self deviceConnected];
 }
 
 - (void)deviceUnmounted
@@ -88,11 +94,6 @@ static void UnmountCallback(FuseGlue* glue)
 	NSLog(@"Device unmounted");
 #endif
 	mounter->Stop();
-	if (afc != NULL) {
-		[diskController performSelectorOnMainThread:@selector(deviceUnmounted:)
-									 withObject:diskController
-								  waitUntilDone:YES];
-	}
 }
 
 - (void)deviceDisconnected
@@ -102,9 +103,6 @@ static void UnmountCallback(FuseGlue* glue)
 #endif
 	afc = NULL;
 	mounter->Stop();
-	[diskController performSelectorOnMainThread:@selector(deviceDisconnected:)
-									 withObject:diskController
-								  waitUntilDone:YES];
 }
 
 @end
