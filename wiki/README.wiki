@@ -15,11 +15,13 @@ Download the latest version of iPhoneDisk on the [http://code.google.com/p/iphon
 
 = Media partition =
 
-With an unmodified iPhone, the _com.apple.afc_ service on the iPhone will only give you access to the *Media* parititon (/var/root).  This partition is read/write and sufficient to InstallRingTones, use the hard disk for storage, and poke around in the library
+With an unmodified iPhone, the _com.apple.afc_ service on the iPhone will only give you access to the *Media* parititon (/var/root).  This partition is read/write by default and sufficient for personal file storage, and poking around at the iTunes Library files.
 
 = Root partition =
 
-Most "jailbreak" programs (or manual instructions) will set up a second afc service labeled _com.apple.afc2_ with full access to the *Root* partition (/).  There are many documents about [http://www.google.com/search?q=iphone+jailbreak iphone jailbreak], but here are some links below that might be helpful.
+To do some more useful things, consider opening access to the *Root* partition using a "jailbreak" program.  This will allow you to access ringtones, and install 3rd party applications.  iPhoneDisk does not perform the "jailbreak" for you, since it serves just as a filesystem plugin and not an all-in-one iPhone hacking utility.
+
+Most "jailbreak" programs (or manual instructions) will set up a second afc service labeled _com.apple.afc2_ with full access to the *Root* partition (/).  There are many documents about [http://www.google.com/search?q=iphone+jailbreak iphone jailbreak], but here are some links below that might be helpful:
 
   * [http://www.macenstein.com/ifuntastic3mirror/iFuntastic_3.0.3.zip iFuntastic 3.0.3] (easy mode)
   * [http://iphone.fiveforty.net/wiki/index.php/How_to_Escape_Jail Jailbreak tutorial with iPHUC] (hard mode)
