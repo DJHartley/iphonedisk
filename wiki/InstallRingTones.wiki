@@ -1,0 +1,13 @@
+#summary Using iPhoneDisk to install ring tones
+
+= Introduction =
+
+This document describes the process of adding custom ringtones to your iPhone using iPhoneDisk (without jailbreak).  You should already be familiar with the README and have iPhoneDisk up and running.
+
+= Details =
+
+  * Connect your iPhone using the USB cable
+  * Open iPhoneDisk, and use the Media partition icon on the desktop
+  * Create a folder named _Library_
+  * Inside Library create a folder named _Ringtones_
+  * Drag your ring tones to your newly created _Ringtones_ folder.  Success has been reported with *.m4a* files.
