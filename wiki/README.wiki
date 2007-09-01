@@ -3,7 +3,7 @@
 
 = Introduction =
 
-iPhoneDisk is a MacFUSE filesystem plugin that allows you to read and write files on your iPhone.  It uses the MobileDevice library to access the filesystem, similar to iTunes.  iPhoenDisk runs on Mac OS X, and has been tested on 10.4.10.
+iPhoneDisk is a MacFUSE filesystem plugin that allows you to read and write files on your iPhone.  It uses the MobileDevice library (like iTunes) to access the filesystem of the iPhone over a USB cable.  iPhoenDisk runs on Mac OS X, and has been tested on 10.4.10.
 
 = Requirements =
 
