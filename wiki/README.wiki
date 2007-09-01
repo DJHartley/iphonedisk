@@ -1,4 +1,5 @@
 #summary README
+#labels Featured
 
 = Introduction =
 
