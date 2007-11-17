@@ -95,7 +95,7 @@ class MounterImpl : public ythread::Thread, public Mounter {
 #ifdef DEBUG
       fuse_opt_add_arg(&args_, "-odebug");
 #endif
-      fuse_opt_add_arg(&args_, "-odefer_auth");
+      fuse_opt_add_arg(&args_, "-odefer_permissions");
 
       string volname_arg("-ovolname=");
       volname_arg.append(volume_);
