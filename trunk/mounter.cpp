@@ -4,6 +4,7 @@
 #include "ythread/callback-inl.h"
 #include <string>
 #include <iostream>
+#include <assert.h>
 #include "mounter.h"
 #include "connection.h"
 #include "iphonedisk.h"
