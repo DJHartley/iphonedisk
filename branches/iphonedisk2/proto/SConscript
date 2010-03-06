@@ -1,0 +1,23 @@
+Import('env')
+
+def modify_targets(target, source, env):
+  genfiles = [ '%s.pb.h' % target[0],
+               '%s.pb.cc' % target[0] ]
+  return genfiles, source
+
+protoc_bld = Builder(action = 'protoc $SOURCE --cpp_out=.',
+                     emitter = modify_targets,
+                     src_suffix = '.proto')
+
+env = env.Clone()
+env.Append(BUILDERS = { 'Protoc' : protoc_bld })
+#, CPPPATH = ['..'])
+
+fs = env.Protoc('fs')
+fs_service = env.Protoc('fs_service')
+Depends(fs_service, fs)
+env.Library('fs_proto',
+            [ 'fs.pb.cc',
+              'fs.pb.h',
+              'fs_service.pb.cc',
+              'fs_service.pb.h' ])

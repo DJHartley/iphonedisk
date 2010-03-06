@@ -1,0 +1,136 @@
+// Author: Allen Porter <allen@thebends.org>
+
+package proto;
+
+message Status {
+  required bool success = 1;
+  optional string status_detail = 2;
+}
+
+message GetAttrRequest {
+  required string path = 1;
+}
+
+message GetAttrResponse {
+  required Status status = 1;
+
+  message Stat {
+    required int64 size = 1;
+    required int64 blocks = 2;
+    required int64 mode = 3;
+    required int64 nlink = 4;
+  }
+  optional Stat stat = 2;
+}
+
+message ReadDirRequest {
+  required string path = 1;
+}
+
+message ReadDirResponse {
+  required Status status = 1;
+  message Entry {
+    required string filename = 1;
+  }
+  repeated Entry entry = 2;
+}
+
+message UnlinkRequest {
+  required string path = 1;
+}
+
+message UnlinkResponse {
+  required Status status = 1;
+}
+
+message MkDirRequest {
+  required string path = 1;
+}
+
+message MkDirResponse {
+  required Status status = 1;
+}
+
+message RenameRequest {
+  required string source_path = 1;
+  required string destination_path = 2;
+}
+
+message RenameResponse {
+  required Status status = 1;
+}
+
+message OpenRequest {
+  required string path = 1;
+  enum Mode {
+    READ = 1;
+    WRITE = 2;
+  }
+  required Mode mode = 2;
+}
+
+message OpenResponse {
+  required Status status = 1;
+  optional int64 filehandle = 2;
+}
+
+message CreateRequest {
+  required string path = 1;
+}
+
+message CreateResponse {
+  required Status status = 1;
+  optional int64 filehandle = 2;
+}
+
+message ReleaseRequest {
+  required int64 filehandle = 1;
+}
+
+message ReleaseResponse {
+  required Status status = 1;
+}
+
+message ReadRequest {
+  required int64 filehandle = 1;
+  required int64 size = 2;
+  required int64 offset = 3;
+}
+
+message ReadResponse {
+  required Status status = 1;
+  optional string buffer = 2;
+}
+
+message WriteRequest {
+  required int64 filehandle = 1;
+  required int64 offset = 2;
+  required string buffer = 3;
+}
+
+message WriteResponse {
+  required Status status = 1;
+}
+
+message TruncateRequest {
+  required string path = 1;
+  required int64 offset = 2;
+}
+
+message TruncateResponse {
+  required Status status = 1;
+}
+
+message StatFsRequest {
+}
+
+message StatFsResponse {
+  required Status status = 1;
+  message Stat {
+    required int64 bsize = 1;
+    required int64 fsrize = 2;
+    required int64 blocks = 3;
+    required int64 bfree = 4;
+  }
+  optional Stat stat = 2;
+}
