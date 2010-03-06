@@ -10,11 +10,15 @@ $ sudo make install
 
 scons
 -----
-Download install from http://www.scons.org/download.php
+Download and install from http://www.scons.org/download.php
 $ tar zxvf scons-1.2.0.tar.gz 
 $ cd scons-1.2.0
 $ sudo python setup.py install
 
+MacFuse
+-------
+Download and install from http://code.google.com/p/macfuse/
+
 iphonedisk
 ----------
-$ protoc --cpp_out=genfiles/ fsclient/fs.proto fsclient/fs_service.proto 
+$ scons

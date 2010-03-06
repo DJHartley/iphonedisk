@@ -1,3 +1,8 @@
 env = Environment(CCFLAGS = '-I.')
 Export('env')
-SConscript('proto/SConscript')
+
+proto = SConscript('proto/SConscript')
+Export('proto')
+
+fs = SConscript('fs/SConscript')
+Export('fs')
