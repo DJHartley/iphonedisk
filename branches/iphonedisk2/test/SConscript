@@ -1,0 +1,7 @@
+Import('env')
+Import('rpc_channel')
+Import('rpc_service')
+Import('proto')
+
+env.Program('test_service.cc', LIBS=[ rpc_service, proto, 'protobuf' ])
+env.Program('test_client.cc', LIBS=[ rpc_channel, proto, 'protobuf' ])

@@ -1,0 +1,7 @@
+To launch test_service, first edit the .plist file and update the path to the
+binary, then run the service through launchd
+
+$ launchctl
+launchd% load test_service.plist
+launchd% start org.thebends.iphonedisk.test_service
+

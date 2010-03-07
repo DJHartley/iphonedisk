@@ -1,14 +1,14 @@
 // Author: Allen Porter <allen@thebends.org>
 
 #include "rpc/mach_channel.h"
-#include "rpc/proto_rpc_types.h"
-#include "rpc/proto_rpc.h"
 
+#include <iostream>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
 #include <google/protobuf/service.h>
 #include <mach/mach.h>
 #include <servers/bootstrap.h>
+#include "rpc/proto_rpc_user.h"
 
 namespace rpc {
 
@@ -26,32 +26,32 @@ class MachChannel : public google::protobuf::RpcChannel {
       const google::protobuf::Message* request,
       google::protobuf::Message* response,
       google::protobuf::Closure* done) {
-    const std::string& service_name = method->service()->full_name();
-    const std::string& method_name = method->full_name();
-printf("Method name: %s", method_name.c_str());
+    const std::string& method_name = method->name();
+    const std::string& service_name = method->service()->name();
     std::string request_bytes;
     if (!request->SerializeToString(&request_bytes)) {
-      controller->SetFailed("Request parse error");
+      controller->SetFailed("Request serialization error");
       done->Run();
       return;
     }
-    int status;
-    char* response_bytes;
+    int32_t status;
+    string_t response_bytes;
     mach_msg_type_number_t response_bytes_size;
     kern_return_t kr = call_method(port_,
-        (char*) service_name.data(), service_name.size(),
-        (char*) method_name.data(), method_name.size(),
-        (char*) request_bytes.data(), request_bytes.size(),
+        (string_t) service_name.data(), (mach_msg_type_number_t) service_name.size(),
+        (string_t) method_name.data(), (mach_msg_type_number_t) method_name.size(),
+        (string_t) request_bytes.data(), (mach_msg_type_number_t) request_bytes.size(),
         &status, &response_bytes, &response_bytes_size);
     if (kr != KERN_SUCCESS) {
-      mach_error("call_method:", kr);
-      controller->SetFailed("RPC error");
+      controller->SetFailed(mach_error_string(kr));
     } else if (status == 0) {
       if (!response->ParseFromArray(response_bytes, response_bytes_size)) {
         controller->SetFailed("Response parse error");
       }
     } else {
-      controller->SetFailed("Error from server");
+      char buf[BUFSIZ];
+      snprintf(buf, BUFSIZ, "Error from server: %d", status);
+      controller->SetFailed(std::string(buf));
     }
     done->Run();
   }
@@ -63,15 +63,11 @@ printf("Method name: %s", method_name.c_str());
 google::protobuf::RpcChannel* NewMachChannel(const std::string& service_name) {
   kern_return_t kr;
   mach_port_t port;
-  char* name = (char*)malloc(service_name.size());
-  strncpy(name, service_name.data(), service_name.size());
-  if ((kr = bootstrap_look_up(bootstrap_port, name,
+  if ((kr = bootstrap_look_up(bootstrap_port, (char*)service_name.c_str(),
                               &port)) != BOOTSTRAP_SUCCESS) {
-    free(name);
     mach_error("bootstrap_look_up:", kr);
     return NULL;
   }
-  free(name);
   return new MachChannel(port);
 }
 

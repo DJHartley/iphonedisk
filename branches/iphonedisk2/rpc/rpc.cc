@@ -4,7 +4,9 @@
 
 namespace rpc {
 
-Rpc::Rpc() { }
+Rpc::Rpc() {
+  Reset();
+}
 
 Rpc::~Rpc() { }
 
