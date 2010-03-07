@@ -1,0 +1,30 @@
+Import('env')
+env = env.Clone()
+
+def generate_actions(source, target, env, for_signature):
+  return 'mig -user %s -server %s -header %s %s' % (
+      target[0], target[1], target[2], source[0])
+
+def genfiles(target, source, env):
+  targets = []
+  for suffix in [ '_user.cc', '_server.cc', '.h' ]:
+    targets.append('%s%s' % (target[0], suffix))
+  return targets, source
+
+mig_bld = Builder(generator = generate_actions,
+                  emitter = genfiles,
+                  src_suffix = '.defs')
+
+env.Append(BUILDERS = { 'Mig' : mig_bld })
+
+
+rpc = env.Object('rpc.cc')
+
+stubs = env.Mig('proto_rpc')
+mach_channel = env.Object('mach_channel.cc')
+Depends(mach_channel, stubs)
+mach_service = env.Object('mach_service.cc')
+Depends(mach_service, stubs)
+
+rpclib = env.Library('rpc', [ rpc, mach_channel, mach_service ])
+Return('rpclib')
