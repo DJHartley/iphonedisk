@@ -34,13 +34,13 @@ class MachChannel : public google::protobuf::RpcChannel {
       done->Run();
       return;
     }
-    int32_t status;
+    int status;
     string_t response_bytes;
-    mach_msg_type_number_t response_bytes_size;
+    unsigned int response_bytes_size;
     kern_return_t kr = call_method(port_,
-        (string_t) service_name.data(), (mach_msg_type_number_t) service_name.size(),
-        (string_t) method_name.data(), (mach_msg_type_number_t) method_name.size(),
-        (string_t) request_bytes.data(), (mach_msg_type_number_t) request_bytes.size(),
+        (string_t) service_name.data(), service_name.size(),
+        (string_t) method_name.data(), method_name.size(),
+        (string_t) request_bytes.data(), request_bytes.size(),
         &status, &response_bytes, &response_bytes_size);
     if (kr != KERN_SUCCESS) {
       controller->SetFailed(mach_error_string(kr));

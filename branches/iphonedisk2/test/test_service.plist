@@ -17,6 +17,10 @@
     </dict>
     <key>Debug</key>
     <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/test_service.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/test_service.err</string>
   </dict>
 </plist>
 

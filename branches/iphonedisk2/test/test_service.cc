@@ -19,7 +19,7 @@ class TestService : public FsService {
                        const GetAttrRequest* request,
                        GetAttrResponse* response,
                        Closure* done) {
-    cout << "Request: " << request->ShortDebugString();
+    cout << "Request: " << request->ShortDebugString() << endl;
     response->mutable_status()->set_success(true);
     response->mutable_status()->set_status_detail("test_service OK");
     done->Run();

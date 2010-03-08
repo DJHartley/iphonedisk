@@ -26,13 +26,13 @@ static const google::protobuf::MethodDescriptor* FindMethod(
       const std::string& service_name,
       const std::string& method_name) {
   if (g_service_desc->name() != service_name) {
-    std::cerr << "Unknown service name" << service_name;
+    std::cerr << "Unknown service name" << service_name << std::endl;
     return NULL;
   }
   const google::protobuf::MethodDescriptor* method =
       g_service_desc->FindMethodByName(method_name);
   if (method == NULL) {
-    std::cerr << "Unknown method name: " << method_name;
+    std::cerr << "Unknown method name: " << method_name << std::endl;
     return NULL;
   }
   return method;
@@ -52,7 +52,6 @@ static void AllocateProtocolMessages(
 
 }  // namespace
 
-
 kern_return_t call_method(
     mach_port_t server_port,
     string_t service_name,
@@ -64,6 +63,14 @@ kern_return_t call_method(
     int32_t* status,
     string_t* response_bytes,
     mach_msg_type_number_t* response_bytesCnt) {
+  // Static storage for the bytes in the return value.  This response protocol
+  // buffer is serialized to this string which needs to stick around so that
+  // mach can read it.
+  static std::string* raw_response = NULL;
+  if (raw_response == NULL) {
+    raw_response = new std::string;
+  }
+
   assert(g_service != NULL);
   const google::protobuf::MethodDescriptor* method =
       FindMethod(std::string(service_name, service_nameCnt),
@@ -79,24 +86,26 @@ kern_return_t call_method(
   rpc::Rpc rpc;
   kern_return_t kr;
   if (!request->ParseFromArray(request_bytes, request_bytesCnt)) {
-    std::cerr << "Unable to parse request message";
+    std::cerr << "Unable to parse request message" << std::endl;
     kr = KERN_INVALID_ARGUMENT;
   } else {
     g_service->CallMethod(method, &rpc, request, response,
                           google::protobuf::NewCallback(
                               &google::protobuf::DoNothing));
     if (rpc.Failed()) {
+      // TODO(aporter): The rpc failure reason could be serialized into the
+      // response, perhaps.
       kr = KERN_SUCCESS;
       *status = -1;
     } else {
-      *response_bytesCnt = response->ByteSize();
-      if (!response->SerializeToArray(response_bytes,
-                                      *response_bytesCnt)) {
-        std::cerr << "Unable to serialize response message";
+      if (!response->AppendToString(raw_response)) {
+        std::cerr << "Unable to serialize response message" << std::endl;
         kr = KERN_INVALID_ARGUMENT;
       } else {
         kr = KERN_SUCCESS;
         *status = 0;
+        *response_bytes = (char*)raw_response->data();
+        *response_bytesCnt = raw_response->size();
       }
     }
   }
