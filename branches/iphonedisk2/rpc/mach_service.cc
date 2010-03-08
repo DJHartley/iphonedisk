@@ -97,6 +97,8 @@ kern_return_t call_method(
       // response, perhaps.
       kr = KERN_SUCCESS;
       *status = -1;
+      *response_bytes = NULL;
+      *response_bytesCnt = 0;
     } else {
       if (!response->AppendToString(raw_response)) {
         std::cerr << "Unable to serialize response message" << std::endl;
