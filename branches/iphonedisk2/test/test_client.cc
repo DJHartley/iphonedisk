@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
   }
   FsService* service = new FsService::Stub(channel);
   GetAttrRequest request;
+  request.mutable_header()->set_fs_id("test-id");
   request.set_path("/dev/null");
   while (true) {
     cout << "Sending request: " << request.ShortDebugString() << endl;
