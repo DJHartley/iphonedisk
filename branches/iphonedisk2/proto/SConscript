@@ -16,9 +16,14 @@ fs = env.Protoc('fs')
 fs_service = env.Protoc('fs_service')
 env.Depends(fs_service, fs)
 
+env.Protoc('mount_service')
+
 proto = env.Library('fs_proto',
     [ 'fs.pb.cc',
       'fs.pb.h',
       'fs_service.pb.cc',
-      'fs_service.pb.h' ])
+      'fs_service.pb.h',
+      'mount_service.pb.cc',
+      'mount_service.pb.h',
+      ])
 Return('proto')

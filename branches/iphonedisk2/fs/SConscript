@@ -5,7 +5,9 @@ Import('rpc_channel')
 
 env.Append(CPPFLAGS = '-D_FILE_OFFSET_BITS=64 -D__FreeBSD__=10 -DFUSE_USE_VERSION=26')
 
-env.Program('fs_server',
-            [ 'fs.cc',
+fs = env.Object('fs.cc')
+Depends(fs, proto)
+fs_server = env.Program('fs_server',
+            [ 'fs.o',
               'fs_server.cc' ],
             LIBS = [ proto, rpc_channel, 'protobuf', 'fuse' ])
