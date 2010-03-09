@@ -7,7 +7,7 @@ env.Append(CPPFLAGS = '-D_FILE_OFFSET_BITS=64 -D__FreeBSD__=10 -DFUSE_USE_VERSIO
 
 fs = env.Object('fs.cc')
 Depends(fs, proto)
-fs_server = env.Program('fs_server',
+mount_server = env.Program('fs_server',
             [ 'fs.o',
-              'fs_server.cc' ],
+              'mount_server.cc' ],
             LIBS = [ proto, rpc_channel, 'protobuf', 'fuse' ])

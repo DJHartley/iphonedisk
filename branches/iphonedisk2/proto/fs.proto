@@ -2,13 +2,18 @@
 
 package proto;
 
+message Header {
+  required string fs_id = 1;
+}
+
 message Status {
   required bool success = 1;
   optional string status_detail = 2;
 }
 
 message GetAttrRequest {
-  required string path = 1;
+  required Header header = 1;
+  required string path = 2;
 }
 
 message GetAttrResponse {
@@ -24,7 +29,8 @@ message GetAttrResponse {
 }
 
 message ReadDirRequest {
-  required string path = 1;
+  required Header header = 1;
+  required string path = 2;
 }
 
 message ReadDirResponse {
@@ -36,7 +42,8 @@ message ReadDirResponse {
 }
 
 message UnlinkRequest {
-  required string path = 1;
+  required Header header = 1;
+  required string path = 2;
 }
 
 message UnlinkResponse {
@@ -44,7 +51,8 @@ message UnlinkResponse {
 }
 
 message MkDirRequest {
-  required string path = 1;
+  required Header header = 1;
+  required string path = 2;
 }
 
 message MkDirResponse {
@@ -52,8 +60,9 @@ message MkDirResponse {
 }
 
 message RenameRequest {
-  required string source_path = 1;
-  required string destination_path = 2;
+  required Header header = 1;
+  required string source_path = 2;
+  required string destination_path = 3;
 }
 
 message RenameResponse {
@@ -61,12 +70,13 @@ message RenameResponse {
 }
 
 message OpenRequest {
-  required string path = 1;
+  required Header header = 1;
+  required string path = 2;
   enum Mode {
     READ = 1;
     WRITE = 2;
   }
-  required Mode mode = 2;
+  required Mode mode = 3;
 }
 
 message OpenResponse {
@@ -75,7 +85,8 @@ message OpenResponse {
 }
 
 message CreateRequest {
-  required string path = 1;
+  required Header header = 1;
+  required string path = 2;
 }
 
 message CreateResponse {
@@ -84,7 +95,8 @@ message CreateResponse {
 }
 
 message ReleaseRequest {
-  required int64 filehandle = 1;
+  required Header header = 1;
+  required int64 filehandle = 2;
 }
 
 message ReleaseResponse {
@@ -92,9 +104,10 @@ message ReleaseResponse {
 }
 
 message ReadRequest {
-  required int64 filehandle = 1;
-  required int64 size = 2;
-  required int64 offset = 3;
+  required Header header = 1;
+  required int64 filehandle = 2;
+  required int64 size = 3;
+  required int64 offset = 4;
 }
 
 message ReadResponse {
@@ -103,9 +116,10 @@ message ReadResponse {
 }
 
 message WriteRequest {
-  required int64 filehandle = 1;
-  required int64 offset = 2;
-  required string buffer = 3;
+  required Header header = 1;
+  required int64 filehandle = 2;
+  required int64 offset = 3;
+  required string buffer = 4;
 }
 
 message WriteResponse {
@@ -113,8 +127,9 @@ message WriteResponse {
 }
 
 message TruncateRequest {
-  required string path = 1;
-  required int64 offset = 2;
+  required Header header = 1;
+  required string path = 2;
+  required int64 offset = 3;
 }
 
 message TruncateResponse {
@@ -122,6 +137,7 @@ message TruncateResponse {
 }
 
 message StatFsRequest {
+  required Header header = 1;
 }
 
 message StatFsResponse {
