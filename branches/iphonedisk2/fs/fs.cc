@@ -17,11 +17,13 @@ namespace fs {
 
 static proto::FsService* g_service = NULL;
 static google::protobuf::Closure* g_null_callback = NULL;
+static std::string* g_fs_id = NULL;
 
 static int fs_getattr(const char* path, struct stat* stbuf) {
   rpc::Rpc rpc;
   proto::GetAttrRequest request;
   proto::GetAttrResponse response;
+  request.mutable_header()->set_fs_id(*g_fs_id);
   request.set_path(path);
   g_service->GetAttr(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
@@ -50,11 +52,13 @@ static int fs_utimens(const char* path, const struct timespec tv[2]) {
 }
 
 void Initialize(proto::FsService* service,
+                const std::string& fs_id,
                 struct fuse_operations* fuse_op) {
   assert(g_service == NULL);
   assert(g_null_callback == NULL);
   g_service = service;
   g_null_callback = google::protobuf::NewCallback(&google::protobuf::DoNothing);
+  g_fs_id = new std::string(fs_id);
   fuse_op->getattr  = fs_getattr;
 /*
   fuse_op->readdir  = fs_readdir;
