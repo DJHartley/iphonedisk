@@ -48,14 +48,25 @@ int main(int argc, char* argv[]) {
   struct fuse* f = fuse_new(chan, &args, &fuse_ops, sizeof(fuse_ops), NULL);
   if (f == NULL) {
     std::cerr << "fuse_new() failed" << std::endl;
+    fuse_unmount(mount_path.c_str(), chan);
     delete service;
     return 1;
   }
-  std::cout << "Fuse loop started.";
-  fuse_loop(f);
-  std::cout << "Fuse loop exited.";
-  // TODO(aporter): Is it even possible to make this loop exist?
+
+  int res = fuse_set_signal_handlers(fuse_get_session(f));
+  if (res == -1) {
+    fuse_unmount(mount_path.c_str(), chan);
+    fuse_destroy(f);
+    delete service;
+    return 1;
+  }
+
+  std::cout << "Fuse loop started." << std::endl;
+  res = fuse_loop(f);
+  std::cout << "Fuse loop exited." << std::endl;
+  fuse_remove_signal_handlers(fuse_get_session(f));
+  fuse_unmount(mount_path.c_str(), chan);
   fuse_destroy(f);
   delete service;
-  return 0;
+  return (res == -1) ? 1 : 0;
 }

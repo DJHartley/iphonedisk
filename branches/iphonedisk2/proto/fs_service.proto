@@ -1,4 +1,6 @@
 // Author: Allen Porter <allen@thebends.org>
+//
+// FsService defines a filesystem API.
 
 import "proto/fs.proto";
 

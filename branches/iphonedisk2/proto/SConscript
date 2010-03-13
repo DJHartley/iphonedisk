@@ -1,3 +1,9 @@
+# Author: Allen Porter <allen@thebends.org>
+#
+# Protocol buffer definitions for iphonedisk.  See
+# http://code.google.com/apis/protocolbuffers/docs/overview.html for more
+# information on protocol buffers.
+
 Import('env')
 env = env.Clone()
 
