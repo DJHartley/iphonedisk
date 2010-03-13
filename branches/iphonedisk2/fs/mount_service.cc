@@ -66,13 +66,15 @@ static void MountFilesystem(const std::string& fs_service_name,
   struct fuse* f = fuse_new(chan, &args, &fuse_ops, sizeof(fuse_ops), NULL);
   if (f == NULL) {
     std::cerr << fs_id << ": fuse_new() failed" << std::endl;
-    fuse_unmount(mount_path.c_str(), chan);
+    // TODO(aporter): Fix?
+    //fuse_unmount(mount_path.c_str(), chan);
     delete service;
     return;
   }
+  std::cout << fs_id << ": Fuse loop started.";
   fuse_loop(f);
-  std::cout << fs_id << ": Fuse loop existed.";
-  // TODO(aporter):
+  std::cout << fs_id << ": Fuse loop exited.";
+  // TODO(aporter): Is it even possible to make this loop exist?
   fuse_destroy(f);
   fuse_unmount(mount_path.c_str(), chan);
   delete service;

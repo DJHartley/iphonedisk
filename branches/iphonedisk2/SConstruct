@@ -1,5 +1,13 @@
-env = Environment(CCFLAGS = '-Werror -Wall -I.')
+env = Environment(CCFLAGS = '-Werror -Wall -I. ')
 Export('env')
+
+mode = ARGUMENTS.get('mode', 'release')
+if not (mode in ['debug', 'release']):
+  print "Error: expected 'debug' or 'release', found: " + mymode
+  Exit(1)
+
+if mode == 'debug':
+  env.Append(CCFLAGS = '-g -DDEBUG ')
 
 proto = SConscript('proto/SConscript')
 Export('proto')
@@ -7,6 +15,7 @@ Export('proto')
 [ rpc_channel, rpc_service ] = SConscript('rpc/SConscript')
 Export('rpc_channel', 'rpc_service')
 
-SConscript('fs/SConscript')
+fs = SConscript('fs/SConscript')
+Export('fs')
 
 SConscript('test/SConscript')

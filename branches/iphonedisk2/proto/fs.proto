@@ -6,26 +6,19 @@ message Header {
   required string fs_id = 1;
 }
 
-message Status {
-  required bool success = 1;
-  optional string status_detail = 2;
-}
-
 message GetAttrRequest {
   required Header header = 1;
   required string path = 2;
 }
 
 message GetAttrResponse {
-  required Status status = 1;
-
   message Stat {
-    required int64 size = 1;
-    required int64 blocks = 2;
-    required int64 mode = 3;
-    required int64 nlink = 4;
+    required int32 size = 1;
+    required int32 blocks = 2;
+    required int32 mode = 3;
+    required int32 nlink = 4;
   }
-  optional Stat stat = 2;
+  optional Stat stat = 1;
 }
 
 message ReadDirRequest {
@@ -34,11 +27,10 @@ message ReadDirRequest {
 }
 
 message ReadDirResponse {
-  required Status status = 1;
   message Entry {
     required string filename = 1;
   }
-  repeated Entry entry = 2;
+  repeated Entry entry = 1;
 }
 
 message UnlinkRequest {
@@ -47,16 +39,15 @@ message UnlinkRequest {
 }
 
 message UnlinkResponse {
-  required Status status = 1;
 }
 
 message MkDirRequest {
   required Header header = 1;
   required string path = 2;
+  required int32 mode = 3;
 }
 
 message MkDirResponse {
-  required Status status = 1;
 }
 
 message RenameRequest {
@@ -66,74 +57,66 @@ message RenameRequest {
 }
 
 message RenameResponse {
-  required Status status = 1;
 }
 
 message OpenRequest {
   required Header header = 1;
   required string path = 2;
-  enum Mode {
-    READ = 1;
-    WRITE = 2;
-  }
-  required Mode mode = 3;
+  required int32 flags = 3;
 }
 
 message OpenResponse {
-  required Status status = 1;
-  optional int64 filehandle = 2;
+  optional int32 filehandle = 1;
 }
 
 message CreateRequest {
   required Header header = 1;
   required string path = 2;
+  required int32 flags = 3;
+  required int32 mode = 4;
 }
 
 message CreateResponse {
-  required Status status = 1;
-  optional int64 filehandle = 2;
+  optional int32 filehandle = 1;
 }
 
 message ReleaseRequest {
   required Header header = 1;
-  required int64 filehandle = 2;
+  required int32 filehandle = 2;
 }
 
 message ReleaseResponse {
-  required Status status = 1;
 }
 
 message ReadRequest {
   required Header header = 1;
-  required int64 filehandle = 2;
-  required int64 size = 3;
-  required int64 offset = 4;
+  required int32 filehandle = 2;
+  required int32 size = 3;
+  required int32 offset = 4;
 }
 
 message ReadResponse {
-  required Status status = 1;
-  optional string buffer = 2;
+  optional string buffer = 1;
 }
 
 message WriteRequest {
   required Header header = 1;
-  required int64 filehandle = 2;
-  required int64 offset = 3;
+  required int32 filehandle = 2;
+  required int32 offset = 3;
   required string buffer = 4;
 }
 
 message WriteResponse {
-  required Status status = 1;
+  required int32 size = 1;
 }
 
 message TruncateRequest {
   required Header header = 1;
   required string path = 2;
-  required int64 offset = 3;
+  required int32 offset = 3;
 }
 
 message TruncateResponse {
-  required Status status = 1;
 }
 
 message StatFsRequest {
@@ -141,12 +124,11 @@ message StatFsRequest {
 }
 
 message StatFsResponse {
-  required Status status = 1;
   message Stat {
-    required int64 bsize = 1;
-    required int64 fsrize = 2;
-    required int64 blocks = 3;
-    required int64 bfree = 4;
+    required int32 bsize = 1;
+    required int32 frsize = 2;
+    required int32 blocks = 3;
+    required int32 bfree = 4;
   }
-  optional Stat stat = 2;
+  optional Stat stat = 1;
 }

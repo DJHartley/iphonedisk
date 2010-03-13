@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include "proto/fs_service.pb.h"
-#include "rpc/rpc.h"
 #include "rpc/mach_service.h"
 
 using namespace google::protobuf;
@@ -20,8 +19,6 @@ class TestService : public FsService {
                        GetAttrResponse* response,
                        Closure* done) {
     cout << "Request: " << request->ShortDebugString() << endl;
-    response->mutable_status()->set_success(true);
-    response->mutable_status()->set_status_detail("test_service OK");
     done->Run();
   }
 };
