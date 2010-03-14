@@ -1,0 +1,7 @@
+Import('env')
+env = env.Clone()
+Import('proto')
+
+env.Library('mobile_fs_service',
+            [ 'mobile_fs_service.cc' ],
+            LIBS = [ proto ])

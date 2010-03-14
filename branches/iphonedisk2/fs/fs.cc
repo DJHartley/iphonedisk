@@ -16,6 +16,10 @@
 
 namespace fs {
 
+static const int kNameMax = 255;
+static const int kFiles = 110000;
+static const int kFilesFree = kFiles - 10000;
+
 static proto::FsService* g_service = NULL;
 static google::protobuf::Closure* g_null_callback = NULL;
 static std::string* g_fs_id = NULL;
@@ -180,10 +184,14 @@ static int fs_statfs(const char* path, struct statvfs* vfs) {
   if (rpc.Failed()) {
     return -ENOENT;
   }
-  vfs->f_bsize = response.stat().bsize();
-  vfs->f_frsize = response.stat().frsize();
-  vfs->f_blocks = response.stat().blocks();
-  vfs->f_bfree = response.stat().bfree();
+  vfs->f_namemax = kNameMax;
+  vfs->f_bsize = response.stat().block_size();
+  vfs->f_frsize = response.stat().block_size();
+  vfs->f_blocks = response.stat().total_bytes() / response.stat().block_size();
+  vfs->f_bfree = response.stat().free_bytes();
+  vfs->f_bavail = vfs->f_bfree;
+  vfs->f_files = kFiles;
+  vfs->f_ffree = kFilesFree;
   return 0;
 
 }

@@ -75,7 +75,7 @@ static void MountFilesystem(const std::string& fs_service_name,
     fuse_unmount(mount_path.c_str(), chan);
     fuse_destroy(f);
     delete service;
-    return 1;
+    return;
   }
   std::cout << "Fuse loop started." << std::endl;
   res = fuse_loop(f);

@@ -18,4 +18,6 @@ Export('rpc_channel', 'rpc_service')
 fs = SConscript('fs/SConscript')
 Export('fs')
 
+SConscript('mobilefs/SConscript')
+
 SConscript('test/SConscript')
