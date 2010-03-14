@@ -1,0 +1,21 @@
+iphonedisk2
+-----------
+
+iphonedisk is a MacFUSE based filesystem that lets you access the contents of
+your iphone or ipod via USB.
+
+This package contains a re-write of the original iphoendisk.  The original was
+plagued with bugs that were difficult to track down due to the nature of its
+design, and this rewrite is an attempt to fix that.
+
+In order to make the system simpler, its split into more moving parts (oops),
+with the goal to have fewer lines of code running inside of MacFUSE.  The
+different components expose a protocol buffer RPC service which uses Mach IPC
+via MIG as the communication channel.
+
+Components:
+
+FsService - Exports a protocol buffer RPC service interface for all filesystem
+commands.  The interface looks a lot like the FUSE API.
+
+TODO(allen): Describe the MountService and UI components.
