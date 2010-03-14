@@ -289,9 +289,13 @@ class MobileFsService : public proto::FsService {
         rpc->SetFailed("AFCDeviceInfoOpen: Mising keys");
       } else {
         proto::StatFsResponse::Stat* stat = response->mutable_stat();
-        stat->set_total_bytes(atoll(info_map["FSTotalBytes"].c_str()));
-        stat->set_free_bytes(atoll(info_map["FSFreeBytes"].c_str()));
-        stat->set_block_size(atoi(info_map["FSBlockSize"].c_str()));
+        int block_size = atoi(info_map["FSBlockSize"].c_str());
+        unsigned long long total_bytes = atoll(info_map["FSTotalBytes"].c_str());
+        unsigned long long free_bytes = atoll(info_map["FSFreeBytes"].c_str());
+        stat->set_bsize(block_size);
+        stat->set_frsize(block_size);
+        stat->set_blocks(total_bytes / block_size);
+        stat->set_bfree(free_bytes / block_size);
       }
     }
     if (rpc->Failed()) {

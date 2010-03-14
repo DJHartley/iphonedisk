@@ -9,7 +9,8 @@ class FsService;
 
 namespace fs {
 
-void Initialize(proto::FsService* service, const std::string& fs_id, 
-                struct fuse_operations* fuse_op);
+bool MountFilesystem(proto::FsService* service,
+                     const std::string& fs_id,
+                     const std::string& volname);
 
 }

@@ -1,10 +1,9 @@
 // Author: Allen Porter <allen@thebends.org>
 
 #include <iostream>
-#include <fuse.h>
 #include <google/protobuf/service.h>
 #include <sys/stat.h>
-#include "fs/mount_service.h"
+#include "mount/mount_service.h"
 #include "proto/mount_service.pb.h"
 #include "rpc/mach_service.h"
 

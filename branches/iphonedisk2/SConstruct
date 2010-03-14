@@ -19,5 +19,5 @@ fs = SConscript('fs/SConscript')
 Export('fs')
 
 SConscript('mobilefs/SConscript')
-
+SConscript('mount/SConscript')
 SConscript('test/SConscript')

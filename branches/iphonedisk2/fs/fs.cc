@@ -185,10 +185,10 @@ static int fs_statfs(const char* path, struct statvfs* vfs) {
     return -ENOENT;
   }
   vfs->f_namemax = kNameMax;
-  vfs->f_bsize = response.stat().block_size();
-  vfs->f_frsize = response.stat().block_size();
-  vfs->f_blocks = response.stat().total_bytes() / response.stat().block_size();
-  vfs->f_bfree = response.stat().free_bytes();
+  vfs->f_bsize = response.stat().bsize();
+  vfs->f_frsize = response.stat().frsize();
+  vfs->f_blocks = response.stat().blocks();
+  vfs->f_bfree = response.stat().bfree();
   vfs->f_bavail = vfs->f_bfree;
   vfs->f_files = kFiles;
   vfs->f_ffree = kFilesFree;
@@ -234,6 +234,64 @@ void Initialize(proto::FsService* service,
   fuse_op->chown    = fs_chown;
   fuse_op->chmod    = fs_chmod;
   fuse_op->utimens  = fs_utimens;
+}
+
+void InitFuseArgs(struct fuse_args* args, const std::string& volname) {
+  *args = (struct fuse_args)FUSE_ARGS_INIT(0, NULL);
+  fuse_opt_add_arg(args, "-d");
+#ifdef DEBUG
+  fuse_opt_add_arg(args, "-odebug");
+#endif
+  fuse_opt_add_arg(args, "-odefer_permissions");
+  std::string volname_arg("-ovolname=");
+  volname_arg.append(volname);
+  fuse_opt_add_arg(args, volname_arg.c_str());
+}
+
+bool MountFilesystem(proto::FsService* service,
+                     const std::string& fs_id,
+                     const std::string& volname) {
+  struct fuse_operations fuse_ops;
+  Initialize(service, fs_id, &fuse_ops);
+
+  struct fuse_args args;
+  InitFuseArgs(&args, volname);
+
+  std::string mount_path = "/Volumes/";
+  mount_path.append(volname);
+  // Ignore errors
+  rmdir(mount_path.c_str());
+  mkdir(mount_path.c_str(), S_IFDIR|0755);
+
+  struct fuse_chan* chan = fuse_mount(mount_path.c_str(), &args);
+  if (chan == NULL) {
+    std::cerr << fs_id << ": fuse_mount() failed" << std::endl;
+    delete service;
+    return false;
+  }
+
+  struct fuse* f = fuse_new(chan, &args, &fuse_ops, sizeof(fuse_ops), NULL);
+  if (f == NULL) {
+    std::cerr << fs_id << ": fuse_new() failed" << std::endl;
+    fuse_unmount(mount_path.c_str(), chan);
+    delete service;
+    return false;
+  }
+  int res = fuse_set_signal_handlers(fuse_get_session(f));
+  if (res == -1) {
+    fuse_unmount(mount_path.c_str(), chan);
+    fuse_destroy(f);
+    delete service;
+    return false;
+  }
+  std::cout << "Fuse loop started." << std::endl;
+  res = fuse_loop(f);
+  std::cout << "Fuse loop exited." << std::endl;
+  fuse_remove_signal_handlers(fuse_get_session(f));
+  fuse_unmount(mount_path.c_str(), chan);
+  fuse_destroy(f);
+  delete service;
+  return true;
 }
 
 }  // namespace fs

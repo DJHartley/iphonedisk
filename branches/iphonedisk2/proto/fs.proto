@@ -125,9 +125,10 @@ message StatFsRequest {
 
 message StatFsResponse {
   message Stat {
-    required int32 block_size = 1;
-    required int32 total_bytes = 2;
-    required int32 free_bytes = 3;
+    required int32 bsize = 1;
+    required int32 frsize = 2;
+    required int32 blocks = 3;
+    required int32 bfree = 4;
   }
   optional Stat stat = 1;
 }

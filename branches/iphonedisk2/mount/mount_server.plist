@@ -6,7 +6,7 @@
     <string>org.thebends.iphonedisk.mount_server</string>
     <key>ProgramArguments</key>
     <array>
-      <string>/Users/aporter/Documents/iphonedisk/branches/iphonedisk2/fs/mount_server</string>
+      <string>/Users/aporter/Documents/iphonedisk/branches/iphonedisk2/mount/mount_server</string>
       <string>org.thebends.iphonedisk.mount_service_rpc</string>
       <string>org.thebends.iphonedisk.fs_service_rpc</string>
     </array>
