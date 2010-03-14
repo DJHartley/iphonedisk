@@ -266,7 +266,6 @@ bool MountFilesystem(proto::FsService* service,
   struct fuse_chan* chan = fuse_mount(mount_path.c_str(), &args);
   if (chan == NULL) {
     std::cerr << fs_id << ": fuse_mount() failed" << std::endl;
-    delete service;
     return false;
   }
 
@@ -274,14 +273,12 @@ bool MountFilesystem(proto::FsService* service,
   if (f == NULL) {
     std::cerr << fs_id << ": fuse_new() failed" << std::endl;
     fuse_unmount(mount_path.c_str(), chan);
-    delete service;
     return false;
   }
   int res = fuse_set_signal_handlers(fuse_get_session(f));
   if (res == -1) {
     fuse_unmount(mount_path.c_str(), chan);
     fuse_destroy(f);
-    delete service;
     return false;
   }
   std::cout << "Fuse loop started." << std::endl;
@@ -290,7 +287,6 @@ bool MountFilesystem(proto::FsService* service,
   fuse_remove_signal_handlers(fuse_get_session(f));
   fuse_unmount(mount_path.c_str(), chan);
   fuse_destroy(f);
-  delete service;
   return true;
 }
 

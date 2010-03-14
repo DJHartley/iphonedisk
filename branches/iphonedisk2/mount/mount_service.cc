@@ -46,6 +46,7 @@ class Mounter : public proto::MountService {
         return;
       }
       fs::MountFilesystem(service, fs_id, volume);
+      delete service;
       return;
     } else {
       // parent process

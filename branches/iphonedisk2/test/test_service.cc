@@ -1,4 +1,6 @@
 // Author: Allen Porter <allen@thebends.org>
+//
+// Dummy implementation of FsService that listens for RPCs from the test client.
 
 #include <iostream>
 #include <string>

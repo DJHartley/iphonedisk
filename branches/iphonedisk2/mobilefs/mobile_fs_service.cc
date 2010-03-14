@@ -2,6 +2,7 @@
 
 #include "mobilefs/mobile_fs_service.h"
 
+#include <iostream>
 #include <string>
 #include <set>
 #include <sys/stat.h>

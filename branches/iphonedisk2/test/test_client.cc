@@ -1,4 +1,6 @@
 // Author: Allen Porter <allen@thebends.org>
+//
+// Generic mach rpc client that sends requests to the test server once per second.
 
 #include <iostream>
 #include <string>
