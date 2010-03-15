@@ -47,7 +47,6 @@ class MobileFsService : public proto::FsService {
       AFCKeyValueClose(info);
       if (info_map.find("st_size") == info_map.end() ||
           info_map.find("st_ifmt") == info_map.end() ||
-          info_map.find("st_ifchr") == info_map.end() ||
           info_map.find("st_blocks") == info_map.end()) {
         rpc->SetFailed("AFCFileInfoOpen: Mising keys");
       } else {

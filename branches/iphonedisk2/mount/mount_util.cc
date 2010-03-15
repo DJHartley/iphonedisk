@@ -1,4 +1,6 @@
 // Author: Allen Porter <allen@thebends.org>
+//
+// Command line tool that issues Mount RPCs to a mount service.
 
 #include <iostream>
 #include <string>

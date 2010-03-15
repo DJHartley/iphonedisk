@@ -2,10 +2,10 @@
  *  MobileDevice.h - interface to MobileDevice.framework 
  *  http://www.theiphonewiki.com/wiki/index.php?title=MobileDevice_Library
  * ------------------------------------------------------------------------- */
-#pragma once
+#ifndef __MOBILEFS_MOBILEDEVICE_H__
+#define __MOBILEFS_MOBILEDEVICE_H__
 
-#ifndef MOBILEDEVICE_H
-#define MOBILEDEVICE_H
+extern "C" {
  
 #define __PACK __attribute__((__packed__))
 
@@ -89,7 +89,7 @@
   } __PACK;
   
   /* The type of the device notification callback function. */
-  typedef void(*am_device_notification_callback)(struct am_device_notification_callback_info *, int cookie);
+  typedef void(*am_device_notification_callback)(struct am_device_notification_callback_info *, void* cookie);
   
   /* The type of the _AMDDeviceAttached function.
    * TODO: change to correct type. */
@@ -199,7 +199,7 @@
    */
   mach_error_t AMDeviceNotificationSubscribe(am_device_notification_callback callback, 
                 unsigned int unused0, unsigned int unused1, 
-                unsigned int cookie, 
+                void* cookie,
                 struct am_device_notification **subscription);
   
 
@@ -633,4 +633,7 @@
   int socketForPort(am_restore_device *rdev, unsigned int portnum);
   int sendCommandToDevice(am_recovery_device *rdev, CFStringRef cfs, int block);
   int sendFileToDevice(am_recovery_device *rdev, CFStringRef filename); 
-#endif
+
+}
+
+#endif  // __MOBILEFS_MOBILEDEVICE_H__

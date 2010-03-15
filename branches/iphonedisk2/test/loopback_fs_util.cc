@@ -1,6 +1,6 @@
 // Author: Allen Porter <allen@thebends.org>
 //
-// Mounts the 
+// Mounts the loopback fs service.
 
 #include <iostream>
 #include "fs/fs.h"
