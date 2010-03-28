@@ -31,7 +31,7 @@ struct FsContext {
 
 static google::protobuf::Closure* g_null_callback = NULL;
 
-static void* fs_init(struct fuse_conn_info* conn) {
+void* fs_init(struct fuse_conn_info* conn) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   fprintf(stderr, "fs_init: %s\n", context->fs_id.c_str());
@@ -39,12 +39,12 @@ static void* fs_init(struct fuse_conn_info* conn) {
   return context;
 }
 
-static void fs_destroy(void* data) {
+void fs_destroy(void* data) {
   struct FsContext* context = static_cast<struct FsContext*>(data);
   fprintf(stderr, "fs_destroy: %s\n", context->fs_id.c_str());
 }
 
-static int fs_getattr(const char* path, struct stat* stbuf) {
+int fs_getattr(const char* path, struct stat* stbuf) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -63,8 +63,8 @@ static int fs_getattr(const char* path, struct stat* stbuf) {
   return 0; 
 }
 
-static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                          off_t offset, struct fuse_file_info *fi) {
+int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+               off_t offset, struct fuse_file_info *fi) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -82,7 +82,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   return 0; 
 }
 
-static int fs_unlink(const char* path) {
+int fs_unlink(const char* path) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -94,7 +94,7 @@ static int fs_unlink(const char* path) {
   return rpc.Failed() ? -ENOENT : 0;
 }
 
-static int fs_mkdir(const char* path, mode_t mode) {
+int fs_mkdir(const char* path, mode_t mode) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -107,7 +107,7 @@ static int fs_mkdir(const char* path, mode_t mode) {
   return rpc.Failed() ? -ENOENT : 0;
 }
 
-static int fs_rename(const char* from, const char* to) {
+int fs_rename(const char* from, const char* to) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -120,7 +120,7 @@ static int fs_rename(const char* from, const char* to) {
   return rpc.Failed() ? -ENOENT : 0;
 }
 
-static int fs_open(const char *path, struct fuse_file_info *fi) {
+int fs_open(const char *path, struct fuse_file_info *fi) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -137,7 +137,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
   return 0;
 }
 
-static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -155,7 +155,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
   return 0;
 }
 
-static int fs_release(const char *path, struct fuse_file_info *fi) {
+int fs_release(const char *path, struct fuse_file_info *fi) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -167,7 +167,7 @@ static int fs_release(const char *path, struct fuse_file_info *fi) {
   return rpc.Failed() ? -ENOENT : 0;
 }
 
-static int fs_read(const char *path, char *buf, size_t size, off_t offset,
+int fs_read(const char *path, char *buf, size_t size, off_t offset,
                    struct fuse_file_info *fi) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
@@ -186,8 +186,8 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset,
   return response.buffer().size();
 }
 
-static int fs_write(const char *path, const char *buf, size_t size,
-                    off_t offset, struct fuse_file_info *fi) {
+int fs_write(const char *path, const char *buf, size_t size,
+             off_t offset, struct fuse_file_info *fi) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -201,7 +201,7 @@ static int fs_write(const char *path, const char *buf, size_t size,
   return rpc.Failed() ? -ENOENT : response.size();
 }
 
-static int fs_truncate(const char *path, off_t offset) {
+int fs_truncate(const char *path, off_t offset) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -217,7 +217,7 @@ static int fs_truncate(const char *path, off_t offset) {
   return rpc.Failed() ? -ENOENT : 0;
 }
 
-static int fs_statfs(const char* path, struct statvfs* vfs) {
+int fs_statfs(const char* path, struct statvfs* vfs) {
   struct FsContext* context =
     static_cast<struct FsContext*>(fuse_get_context()->private_data);
   rpc::Rpc rpc;
@@ -239,18 +239,19 @@ static int fs_statfs(const char* path, struct statvfs* vfs) {
   return 0;
 }
 
-static int fs_chown(const char* path, uid_t uid, gid_t) {
+int fs_chown(const char* path, uid_t uid, gid_t) {
   return 0;
 }
 
-static int fs_chmod(const char* path, mode_t) {
+int fs_chmod(const char* path, mode_t) {
   return 0;
 }
 
-static int fs_utimens(const char* path, const struct timespec tv[2]) {
+int fs_utimens(const char* path, const struct timespec tv[2]) {
   return 0;
 }
 
+// TODO(allen): fuse_op could be a static that is initialized once.
 void Initialize(struct fuse_operations* fuse_op) {
   assert(g_null_callback == NULL);
   g_null_callback = google::protobuf::NewPermanentCallback(
