@@ -224,11 +224,9 @@ class LoopbackService : public proto::FsService {
     struct statvfs stbuf;
     int res = statvfs("/", &stbuf);
     if (res == -1) {
-std::cout << "statfs failed" << std::endl;
       rpc->SetFailed(strerror(errno));
       LOG_FAILURE(request, rpc);
     } else {
-std::cout << "statfs success" << std::endl;
       response->mutable_stat()->set_bsize(stbuf.f_bsize);
       response->mutable_stat()->set_frsize(stbuf.f_frsize);
       response->mutable_stat()->set_blocks(stbuf.f_blocks);

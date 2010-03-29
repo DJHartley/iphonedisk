@@ -9,6 +9,8 @@
 #include <string>
 #include <fuse/fuse.h>
 #include <fuse/fuse_lowlevel.h>
+#include <sys/param.h>
+#include <sys/mount.h>
 #include "proto/fs_service.pb.h"
 #include "fs/fs.h"
 #include "fs/fs_fuse.h"
@@ -46,8 +48,9 @@ class MountPoint {
     return true;
   }
 
-  struct fuse_args* args() { return &args_; }
   struct fuse_chan* channel() { return channel_; }
+  struct fuse_args* args() { return &args_; }
+  const std::string& mount_path() { return mount_path_; }
 
  private:
   struct fuse_chan* channel_;
@@ -103,7 +106,7 @@ class Session {
   // thread to make a thread blocked in Loop exit.  This is a no-op if the
   // loop has already exited.
   void MakeLoopExit() {
-    fuse_session_exit(fuse_get_session(fuse_));
+    unmount(mount_point_->mount_path().c_str(), MNT_FORCE);
   }
 
  private:
