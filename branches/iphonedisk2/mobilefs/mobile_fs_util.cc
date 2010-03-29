@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "fs/fs.h"
+#include "fs/fs_proxy.h"
 #include "mobilefs/mobiledevice.h"
 #include "mobilefs/mobile_fs_service.h"
 #include "proto/fs_service.pb.h"
@@ -56,13 +57,19 @@ static bool StartSession(am_device* device, struct MountArgs* args) {
     return false;
   }
   proto::FsService* service = mobilefs::NewMobileFsService(conn);
-  bool res = fs::MountFilesystem(service, args->afc_service_name, args->volume);
-  if (!res) {
+  fs::Filesystem* fs = fs::NewProxyFilesystem(service, "mobile-fs",
+                                              args->volume);
+  if (!fs) {
     std::cerr << "fs::MountFilesystem failed" << std::endl;
+  } else {
+    // TODO(allen): Make this non-blocking, otherwise we do not get notified
+    // when the device has disconnected.
+    fs->WaitForUnmount();
+    delete fs;
   }
   CFRelease(service_name);
   delete service;
-  return res;
+  return 0;
 }
 
 static void notify_callback(am_device_notification_callback_info *info,
@@ -89,6 +96,7 @@ static void notify_callback(am_device_notification_callback_info *info,
     CFRunLoopStop(CFRunLoopGetCurrent());
   }
 }
+
 int main(int argc, char* argv[]) {
   if (argc != 3) {
     fprintf(stderr, "Usage: %s <volume> <afc service>\n", argv[0]);

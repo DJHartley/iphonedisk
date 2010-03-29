@@ -11,61 +11,68 @@
 #include "proto/fs_service.pb.h"
 #include "proto/mount_service.pb.h"
 #include "fs/fs.h"
+#include "fs/fs_proxy.h"
 
 namespace {
 
-static proto::FsService* NewFsService(const std::string& fs_service_name) {
-  google::protobuf::RpcChannel* channel = rpc::NewMachChannel(fs_service_name);
-  if (channel == NULL) {
-    return NULL;
-  }
-  return new proto::FsService::Stub(channel);
-}
-
 class Mounter : public proto::MountService {
  public:
-  Mounter(const std::string& fs_service_name)
-      : fs_service_name_(fs_service_name) { }
-  virtual ~Mounter() { }
+  Mounter(proto::FsService* service)
+      : service_(service), 
+        proxy_fs_(NULL) { }
 
-  void Mount(google::protobuf::RpcController* rpc,
-             const proto::MountRequest* request,
-             proto::MountResponse* response,
-             google::protobuf::Closure* done) {
+  virtual ~Mounter() {
+    if (proxy_fs_ != NULL) {
+      // A filesystem was mounted!
+      std::cout << "Abandoning proxy filesystem" << std::endl;
+      proxy_fs_->Unmount();
+      delete proxy_fs_;
+    }
+    delete service_;
+  }
+
+   virtual void Mount(google::protobuf::RpcController* rpc,
+                     const proto::MountRequest* request,
+                     proto::MountResponse* response,
+                     google::protobuf::Closure* done) {
     std::string fs_id = request->fs_id();
     std::string volume = request->volume();
-    pid_t p = fork();
-    if (p == -1) {
-      perror("fork");
-      exit(errno);
-    } else if (p == 0) {
-      // child process
-      proto::FsService* service = NewFsService(fs_service_name_);
-      if (service == NULL) {
-        std::cerr << fs_id << ": FsService creation failed" << std::endl;
-        return;
-      }
-      fs::MountFilesystem(service, fs_id, volume);
-      delete service;
-      return;
-    } else {
-      // parent process
-      // TODO(aporter): Keep track of the child process id and perhaps report
-      // status about it via another API
-      done->Run();
+    proxy_fs_ = fs::NewProxyFilesystem(service_, fs_id, volume);
+    if (!proxy_fs_->Mount()) {
+      rpc->SetFailed("Failed to mount proxy filesystem");
+      proxy_fs_ = NULL;
+      delete proxy_fs_;
     }
+    done->Run();
+  }
+
+  virtual void Unmount(google::protobuf::RpcController* rpc,
+                       const proto::MountRequest* request,
+                       proto::MountResponse* response,
+                       google::protobuf::Closure* done) {
+    if (proxy_fs_ == NULL) {
+      rpc->SetFailed("Filesystem not mounted");
+    } else {
+      proxy_fs_->Unmount();
+      delete proxy_fs_;
+      proxy_fs_ = NULL;
+    }
+    done->Run();
   }
 
  private:
-  std::string fs_service_name_;
+  proto::FsService* service_;
+  // TODO(allen): Can this be a map of filesystems? I think the fuse code needs
+  // to be static-free before this is possible.
+  fs::Filesystem* proxy_fs_;
 };
 
 }  // namespace
 
-namespace fs {
+namespace mount {
 
-proto::MountService* NewMountService(const std::string& fs_service_name) {
-  return new Mounter(fs_service_name);
+proto::MountService* NewMountService(proto::FsService* fs_service) {
+  return new Mounter(fs_service);
 }
 
 }  // namespace fs

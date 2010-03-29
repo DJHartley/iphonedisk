@@ -4,6 +4,13 @@ Import('proto')
 
 env.Append(CPPFLAGS = '-D_FILE_OFFSET_BITS=64 -D__FreeBSD__=10 -DFUSE_USE_VERSION=26')
 
-fs = env.Object('fs.cc')
-Depends(fs, proto)
+fs_obj = env.Object('fs.cc')
+Depends(fs_obj, proto)
+fs_fuse = env.Object('fs_fuse.cc')
+Depends(fs_fuse, proto)
+fs_proxy = env.Object('fs_proxy.cc')
+Depends(fs_proxy, [ fs_obj, fs_fuse ])
+
+fs = env.Library('fs',
+                 [ fs_obj, fs_fuse, fs_proxy ])
 Return('fs')

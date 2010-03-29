@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "fs/fs.h"
+#include "fs/fs_proxy.h"
 #include "proto/fs_service.pb.h"
 #include "test/loopback_fs_service.h"
 
@@ -14,10 +15,13 @@ int main(int argc, char* argv[]) {
   }
   const std::string& volume(argv[1]);
   proto::FsService* service = test::NewLoopbackService();
-  bool res = fs::MountFilesystem(service, "dummy-fs-id", volume);
-  if (!res) {
+  fs::Filesystem* fs = fs::NewProxyFilesystem(service, "dummy-fs-id", volume);
+  if (!fs->Mount()) {
     std::cerr << "fs::MountFilesystem failed";
+  } else {
+    fs->WaitForUnmount();
   }
+  delete fs;
   delete service;
-  return res ? 0 : 1;
+  return 0;
 }

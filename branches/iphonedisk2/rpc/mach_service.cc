@@ -26,7 +26,7 @@ static const google::protobuf::MethodDescriptor* FindMethod(
       const std::string& service_name,
       const std::string& method_name) {
   if (g_service_desc->name() != service_name) {
-    std::cerr << "Unknown service name" << service_name << std::endl;
+    std::cerr << "Unknown service name: " << service_name << std::endl;
     return NULL;
   }
   const google::protobuf::MethodDescriptor* method =

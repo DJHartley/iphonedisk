@@ -15,5 +15,8 @@ Depends(mount_server, [ proto, fs, rpc_channel, rpc_service ])
 mount_util = env.Program('mount_util',
                          [ 'mount_util.cc' ],
                          LIBS = [ proto, rpc_channel, 'protobuf' ])
+umount_util = env.Program('umount_util',
+                           [ 'umount_util.cc' ],
+                           LIBS = [ proto, rpc_channel, 'protobuf' ])
 
 

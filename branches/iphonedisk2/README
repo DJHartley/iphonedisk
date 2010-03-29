@@ -11,11 +11,16 @@ design, and this rewrite is an attempt to fix that.
 In order to make the system simpler, its split into more moving parts (oops),
 with the goal to have fewer lines of code running inside of MacFUSE.  The
 different components expose a protocol buffer RPC service which uses Mach IPC
-via MIG as the communication channel.
+via MIG as the communication channel.  Using Mach IPC is perhaps overkill,
+as domain sockets could be used instead, however it seemed fun to try.  One
+advantage over domain sockets is that by using the MIG layer, it does all of
+the message parsing for you.
 
 Components:
 
-FsService - Exports a protocol buffer RPC service interface for all filesystem
-commands.  The interface looks a lot like the FUSE API.
+FsService - Exports a protocol buffer RPC service for all filesystem commands.
+The interface looks a lot like the FUSE API.
 
-TODO(allen): Describe the MountService and UI components.
+MountService - Exports a protocol buffer RPC service that actually mounts a
+fuse volume.  The MountService typically has a FsService channel that it uses to
+proxy all of the fuse API calls.

@@ -29,6 +29,5 @@ int main(int argc, char* argv[]) {
   }
   delete service;
 
-
   return 0;
 }

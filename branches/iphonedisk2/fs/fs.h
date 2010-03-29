@@ -9,8 +9,21 @@ class FsService;
 
 namespace fs {
 
-bool MountFilesystem(proto::FsService* service,
-                     const std::string& fs_id,
-                     const std::string& volname);
+class Filesystem {
+ public:
+  Filesystem();
 
-}
+  // Destroy the filesystem, and unmount it if it was previously mounted
+  virtual ~Filesystem();
+
+  // Mount the filesystem with the specified volume name and return immediately.
+  virtual bool Mount() = 0;
+
+  // Unmount the filesyste, after it has previously been mounted.
+  virtual void Unmount() = 0;
+
+  // Block until the filesystem is unmounted by a third party
+  virtual void WaitForUnmount() = 0;
+};
+
+}  // namespace fs
