@@ -96,14 +96,14 @@ message ReadRequest {
 }
 
 message ReadResponse {
-  optional string buffer = 1;
+  optional bytes buffer = 1;
 }
 
 message WriteRequest {
   required Header header = 1;
   required int32 filehandle = 2;
   required int32 offset = 3;
-  required string buffer = 4;
+  required bytes buffer = 4;
 }
 
 message WriteResponse {
