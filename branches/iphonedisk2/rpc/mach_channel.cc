@@ -34,9 +34,9 @@ class MachChannel : public google::protobuf::RpcChannel {
       done->Run();
       return;
     }
-    int status;
-    string_t response_bytes;
-    unsigned int response_bytes_size;
+    int status = -1;
+    string_t response_bytes = NULL;
+    unsigned int response_bytes_size = 0;
     kern_return_t kr = call_method(port_,
         (string_t) service_name.data(), service_name.size(),
         (string_t) method_name.data(), method_name.size(),
@@ -46,6 +46,8 @@ class MachChannel : public google::protobuf::RpcChannel {
       controller->SetFailed(mach_error_string(kr));
     } else if (status == 0) {
       if (!response->ParseFromArray(response_bytes, response_bytes_size)) {
+        std::cerr << "Can't parse response of size: " << response_bytes_size
+                  << std::endl;
         controller->SetFailed("Response parse error");
       }
     } else {

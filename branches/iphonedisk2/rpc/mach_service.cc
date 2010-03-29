@@ -99,7 +99,7 @@ kern_return_t call_method(
       *response_bytes = (char*)error_text.c_str();
       *response_bytesCnt = error_text.size();
     } else {
-      if (!response->AppendToString(raw_response)) {
+      if (!response->SerializeToString(raw_response)) {
         std::cerr << "Unable to serialize response message" << std::endl;
         kr = KERN_INVALID_ARGUMENT;
       } else {
