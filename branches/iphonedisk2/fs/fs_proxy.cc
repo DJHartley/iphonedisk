@@ -29,11 +29,15 @@ class MountPoint {
     if (channel_ != NULL) {
       fuse_unmount(mount_path_.c_str(), channel_);
     }
+    // Ignore errors
+    rmdir(mount_path_.c_str());
   }
  
   bool Create() {
+    // Ignore errors
     rmdir(mount_path_.c_str());
     mkdir(mount_path_.c_str(), S_IFDIR|0755);
+
     channel_ = fuse_mount(mount_path_.c_str(), &args_);
     if (channel_ == NULL) {
       std::cerr << "fuse_mount() failed" << std::endl;

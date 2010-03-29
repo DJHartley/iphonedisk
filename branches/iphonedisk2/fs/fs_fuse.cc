@@ -244,9 +244,10 @@ int fs_utimens(const char* path, const struct timespec tv[2]) {
 
 // TODO(allen): fuse_op could be a static that is initialized once.
 void InitFuseOps(struct fuse_operations* fuse_op) {
-  assert(g_null_callback == NULL);
-  g_null_callback = google::protobuf::NewPermanentCallback(
-      &google::protobuf::DoNothing);
+  if (g_null_callback == NULL) {
+    g_null_callback = google::protobuf::NewPermanentCallback(
+        &google::protobuf::DoNothing);
+  }
   bzero(fuse_op, sizeof(struct fuse_operations));
   fuse_op->init     = fs_init;
   fuse_op->destroy  = fs_destroy;
