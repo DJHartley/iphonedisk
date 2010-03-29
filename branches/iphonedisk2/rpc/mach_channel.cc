@@ -49,9 +49,9 @@ class MachChannel : public google::protobuf::RpcChannel {
         controller->SetFailed("Response parse error");
       }
     } else {
-      char buf[BUFSIZ];
-      snprintf(buf, BUFSIZ, "Error from server: %d", status);
-      controller->SetFailed(std::string(buf));
+      std::string detail;
+      detail.assign(response_bytes, response_bytes_size);
+      controller->SetFailed(detail);
     }
     done->Run();
   }

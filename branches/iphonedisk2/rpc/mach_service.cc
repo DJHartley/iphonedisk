@@ -93,12 +93,11 @@ kern_return_t call_method(
                           google::protobuf::NewCallback(
                               &google::protobuf::DoNothing));
     if (rpc.Failed()) {
-      // TODO(aporter): The rpc failure reason could be serialized into the
-      // response, perhaps.
       kr = KERN_SUCCESS;
       *status = -1;
-      *response_bytes = NULL;
-      *response_bytesCnt = 0;
+      const std::string& error_text = rpc.ErrorText();
+      *response_bytes = (char*)error_text.c_str();
+      *response_bytesCnt = error_text.size();
     } else {
       if (!response->AppendToString(raw_response)) {
         std::cerr << "Unable to serialize response message" << std::endl;

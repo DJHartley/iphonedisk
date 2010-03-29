@@ -12,7 +12,8 @@ routine call_method(
   in method_name : string_t;
   // request and response are serialized protocol messages
   in request_bytes : string_t;
-  // Non-zero return code indicates a failure
+  // Non-zero return code indicates a failure.  On error response_byte is a
+  // error detail string instead of a protocol buffer.
   out status : int32_t;
   out response_bytes : string_t
 );
