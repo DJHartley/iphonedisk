@@ -15,6 +15,9 @@ struct MountArgs {
   std::string afc_service_name;
 };
 
+static fs::Filesystem* filesystem = NULL;
+static proto::FsService* service = NULL;
+
 static bool InitializeDevice(am_device* device) {
   int ret = AMDeviceConnect(device);
   if (ret != MDERR_OK) {
@@ -49,27 +52,25 @@ static bool StartSession(am_device* device, struct MountArgs* args) {
     CFRelease(service_name);
     return false;
   }
+  CFRelease(service_name);
   afc_connection* conn;
   ret = AFCConnectionOpen(socket, 0, &conn);
   if (ret != MDERR_OK) {
     std::cerr << "AFCConnectionOpen failed" << std::endl;
-    CFRelease(service_name);
     return false;
   }
-  proto::FsService* service = mobilefs::NewMobileFsService(conn);
-  fs::Filesystem* fs = fs::NewProxyFilesystem(service, "mobile-fs",
-                                              args->volume);
-  if (!fs) {
+  service = mobilefs::NewMobileFsService(conn);
+  filesystem = fs::NewProxyFilesystem(service, "mobile-fs", args->volume);
+  if (!filesystem->Mount()) {
     std::cerr << "fs::MountFilesystem failed" << std::endl;
-  } else {
-    // TODO(allen): Make this non-blocking, otherwise we do not get notified
-    // when the device has disconnected.
-    fs->WaitForUnmount();
-    delete fs;
+    delete filesystem;
+    filesystem = NULL;
+    delete service;
+    service = NULL;
+    return false;
   }
-  CFRelease(service_name);
-  delete service;
-  return 0;
+  std::cout << "Mounted volume as: " << args->volume << std::endl;
+  return true;
 }
 
 static void notify_callback(am_device_notification_callback_info *info,
@@ -79,8 +80,21 @@ static void notify_callback(am_device_notification_callback_info *info,
   bool exit = false;
   if (info->msg == ADNCI_MSG_DISCONNECTED) {
     std::cout << "Device disconnected" << std::endl;
+    // TODO(allen): Should this wait for a re-connect?
     exit = true;
+    if (filesystem != NULL) {
+      // Unmount a previously mounted device
+      filesystem->Unmount();
+      delete filesystem;
+      filesystem = NULL;
+      delete service;
+      service = NULL;
+    }
   } else if (info->msg == ADNCI_MSG_CONNECTED) {
+    if (filesystem != NULL) {
+      std::cout << "Device already mounted? Waiting for disconnect";
+      return;
+    }
     struct am_device* device = info->dev;
     if (!InitializeDevice(device)) {
       exit = true;
@@ -89,7 +103,6 @@ static void notify_callback(am_device_notification_callback_info *info,
       if (!StartSession(device, mount_args)) {
         std::cerr << "Failed to start session" << std::endl;
       }
-      exit = true;
     }
   }
   if (exit) {
