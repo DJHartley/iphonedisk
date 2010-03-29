@@ -10,8 +10,6 @@
       <string>org.thebends.iphonedisk.fs_service_rpc</string>
     </array>
     <key>KeepAlive</key>
-    <false/>
-    <key>OnDemand</key>
     <true/>
     <key>MachServices</key>
     <dict>

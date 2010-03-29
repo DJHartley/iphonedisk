@@ -22,8 +22,9 @@ namespace test {
 
 #ifdef DEBUG
 
-#define LOG_FAILURE(x) { \
-    std::cout << "RPC Failure: " << x->ErrorText() << std::endl; \
+#define LOG_FAILURE(x, y) { \
+    std::cout << "REQ: " << x->ShortDebugString() << "; Failure: " \
+              << y->ErrorText() << std::endl; \
   }
 
 #define LOG_SUCCESS(x, y) { \
@@ -33,7 +34,7 @@ namespace test {
 
 #else
 
-#define LOG_FAILURE(x) (void)x
+#define LOG_FAILURE(request, x) (void)x
 #define LOG_SUCCESS(x, y) (void)x; (void)y
 
 #endif 
@@ -50,7 +51,7 @@ class LoopbackService : public proto::FsService {
     int res = stat(request->path().c_str(), &stbuf);
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       response->mutable_stat()->set_size(stbuf.st_size);
       response->mutable_stat()->set_blocks(stbuf.st_blocks);
@@ -68,7 +69,7 @@ class LoopbackService : public proto::FsService {
     DIR* d = opendir(request->path().c_str());
     if (d == NULL) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       struct dirent* dp;
       while ((dp = readdir(d)) != NULL) {
@@ -87,7 +88,7 @@ class LoopbackService : public proto::FsService {
     int res = unlink(request->path().c_str());
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       LOG_SUCCESS(request, response);
     }
@@ -101,7 +102,7 @@ class LoopbackService : public proto::FsService {
     int res = mkdir(request->path().c_str(), request->mode());
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       LOG_SUCCESS(request, response);
     }
@@ -116,7 +117,7 @@ class LoopbackService : public proto::FsService {
                      request->destination_path().c_str());
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       LOG_SUCCESS(request, response);
     }
@@ -130,7 +131,7 @@ class LoopbackService : public proto::FsService {
     int fd = open(request->path().c_str(), request->flags());
     if (fd == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       response->set_filehandle(fd);
       LOG_SUCCESS(request, response);
@@ -145,7 +146,7 @@ class LoopbackService : public proto::FsService {
     int fd = open(request->path().c_str(), request->flags(), request->mode());
     if (fd == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       response->set_filehandle(fd);
       LOG_SUCCESS(request, response);
@@ -168,7 +169,7 @@ class LoopbackService : public proto::FsService {
             Closure* done) {
     if (request->size() > kMaxBufferSize) {
       rpc->SetFailed("Read request too large");
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
       done->Run();
       return;
     }
@@ -177,7 +178,7 @@ class LoopbackService : public proto::FsService {
                         request->offset());
     if (n == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       response->mutable_buffer()->assign((char*)buf, n);
       LOG_SUCCESS(request, response);
@@ -194,7 +195,7 @@ class LoopbackService : public proto::FsService {
                        request->buffer().size(), request->offset());
     if (n == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       response->set_size(n);
       LOG_SUCCESS(request, response);
@@ -209,7 +210,7 @@ class LoopbackService : public proto::FsService {
     int res = truncate(request->path().c_str(), request->offset());
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
       LOG_SUCCESS(request, response);
     }
@@ -223,9 +224,11 @@ class LoopbackService : public proto::FsService {
     struct statvfs stbuf;
     int res = statvfs("/", &stbuf);
     if (res == -1) {
+std::cout << "statfs failed" << std::endl;
       rpc->SetFailed(strerror(errno));
-      LOG_FAILURE(rpc);
+      LOG_FAILURE(request, rpc);
     } else {
+std::cout << "statfs success" << std::endl;
       response->mutable_stat()->set_bsize(stbuf.f_bsize);
       response->mutable_stat()->set_frsize(stbuf.f_frsize);
       response->mutable_stat()->set_blocks(stbuf.f_blocks);
