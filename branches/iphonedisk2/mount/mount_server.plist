@@ -10,6 +10,8 @@
       <string>org.thebends.iphonedisk.mount_service_rpc</string>
       <string>org.thebends.iphonedisk.fs_service_rpc</string>
     </array>
+    <key>LimitLoadToSessionType</key>
+    <string>Background</string>
     <key>KeepAlive</key>
     <true/>
     <key>MachServices</key>

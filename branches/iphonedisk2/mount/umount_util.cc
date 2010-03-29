@@ -15,7 +15,8 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
   if (argc != 4) {
-    fprintf(stderr, "Usage: %s <mount service name> <fsid> <volume>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <mount service name> <fsid> <volume>\n",
+            argv[0]);
     return 1;
   }
   RpcChannel* channel = NewMachChannel(argv[1]);

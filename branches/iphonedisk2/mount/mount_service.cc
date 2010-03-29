@@ -37,23 +37,30 @@ class Mounter : public proto::MountService {
                      google::protobuf::Closure* done) {
     std::string fs_id = request->fs_id();
     std::string volume = request->volume();
-    proxy_fs_ = fs::NewProxyFilesystem(service_, fs_id, volume);
-    if (!proxy_fs_->Mount()) {
-      rpc->SetFailed("Failed to mount proxy filesystem");
-      proxy_fs_ = NULL;
-      delete proxy_fs_;
+    if (proxy_fs_ != NULL) {
+      rpc->SetFailed("Filesystem already mounted");
+    } else {
+      proxy_fs_ = fs::NewProxyFilesystem(service_, fs_id, volume);
+      if (!proxy_fs_->Mount()) {
+        rpc->SetFailed("Failed to mount proxy filesystem");
+        proxy_fs_ = NULL;
+        delete proxy_fs_;
+      } else {
+        std::cout << "Mounted " << fs_id << " as " << volume << std::endl;
+      }
     }
     done->Run();
   }
 
   virtual void Unmount(google::protobuf::RpcController* rpc,
-                       const proto::MountRequest* request,
-                       proto::MountResponse* response,
+                       const proto::UnmountRequest* request,
+                       proto::UnmountResponse* response,
                        google::protobuf::Closure* done) {
     if (proxy_fs_ == NULL) {
       rpc->SetFailed("Filesystem not mounted");
     } else {
       proxy_fs_->Unmount();
+      std::cout << "Unmounted filesystem" << std::endl;
       delete proxy_fs_;
       proxy_fs_ = NULL;
     }
