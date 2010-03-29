@@ -45,6 +45,7 @@ int fs_getattr(const char* path, struct stat* stbuf) {
   request.set_path(path);
   context->service->GetAttr(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "getattr failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   stbuf->st_size = response.stat().size();
@@ -65,6 +66,7 @@ int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   request.set_path(path);
   context->service->ReadDir(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "readdir failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   for (int i = 0; i < response.entry_size(); ++i) {
@@ -82,7 +84,11 @@ int fs_unlink(const char* path) {
   request.mutable_header()->set_fs_id(context->fs_id);
   request.set_path(path);
   context->service->Unlink(&rpc, &request, &response, g_null_callback);
-  return rpc.Failed() ? -ENOENT : 0;
+  if (rpc.Failed()) {
+    std::cerr << "unlink failed: " << rpc.ErrorText() << std::endl;
+    return -ENOENT;
+  }
+  return 0;
 }
 
 int fs_mkdir(const char* path, mode_t mode) {
@@ -95,7 +101,11 @@ int fs_mkdir(const char* path, mode_t mode) {
   request.set_path(path);
   request.set_mode(mode);
   context->service->MkDir(&rpc, &request, &response, g_null_callback);
-  return rpc.Failed() ? -ENOENT : 0;
+  if (rpc.Failed()) {
+    std::cerr << "mkdir failed: " << rpc.ErrorText() << std::endl;
+    return -ENOENT;
+  }
+  return 0;
 }
 
 int fs_rename(const char* from, const char* to) {
@@ -108,7 +118,11 @@ int fs_rename(const char* from, const char* to) {
   request.set_source_path(from);
   request.set_destination_path(to);
   context->service->Rename(&rpc, &request, &response, g_null_callback);
-  return rpc.Failed() ? -ENOENT : 0;
+  if (rpc.Failed()) {
+    std::cerr << "rename failed: " << rpc.ErrorText() << std::endl;
+    return -ENOENT;
+  }
+  return 0;
 }
 
 int fs_open(const char *path, struct fuse_file_info *fi) {
@@ -122,6 +136,7 @@ int fs_open(const char *path, struct fuse_file_info *fi) {
   request.set_flags(fi->flags);
   context->service->Open(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "open failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   fi->fh = response.filehandle();
@@ -140,6 +155,7 @@ int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
   request.set_mode(mode);
   context->service->Create(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "create failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   fi->fh = response.filehandle();
@@ -155,7 +171,11 @@ int fs_release(const char *path, struct fuse_file_info *fi) {
   request.mutable_header()->set_fs_id(context->fs_id);
   request.set_filehandle(fi->fh);
   context->service->Release(&rpc, &request, &response, g_null_callback);
-  return rpc.Failed() ? -ENOENT : 0;
+  if (rpc.Failed()) {
+    std::cerr << "release failed: " << rpc.ErrorText() << std::endl;
+    return -ENOENT;
+  }
+  return 0;
 }
 
 int fs_read(const char *path, char *buf, size_t size, off_t offset,
@@ -171,6 +191,7 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset,
   request.set_offset(offset);
   context->service->Read(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "read failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   memcpy(buf, response.buffer().data(), response.buffer().size());
@@ -189,7 +210,11 @@ int fs_write(const char *path, const char *buf, size_t size,
   request.mutable_buffer()->assign(buf, size);
   request.set_offset(offset);
   context->service->Write(&rpc, &request, &response, g_null_callback);
-  return rpc.Failed() ? -ENOENT : response.size();
+  if (rpc.Failed()) {
+    std::cerr << "write failed: " << rpc.ErrorText() << std::endl;
+    return -ENOENT;
+  }
+  return response.size();
 }
 
 int fs_truncate(const char *path, off_t offset) {
@@ -203,6 +228,7 @@ int fs_truncate(const char *path, off_t offset) {
   request.set_offset(offset);
   context->service->Truncate(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "truncate failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   return rpc.Failed() ? -ENOENT : 0;
@@ -217,6 +243,7 @@ int fs_statfs(const char* path, struct statvfs* vfs) {
   request.mutable_header()->set_fs_id(context->fs_id);
   context->service->StatFs(&rpc, &request, &response, g_null_callback);
   if (rpc.Failed()) {
+    std::cerr << "statfs failed: " << rpc.ErrorText() << std::endl;
     return -ENOENT;
   }
   vfs->f_namemax = kNameMax;
