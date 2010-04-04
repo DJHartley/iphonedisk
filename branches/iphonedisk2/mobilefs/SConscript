@@ -7,6 +7,9 @@ Import('rpc_service')
 env.Append(FRAMEWORKS = ['Carbon', 'MobileDevice'])
 env.Append(FRAMEWORKPATH = ['/System/Library/PrivateFrameworks'])
 
+afc = env.Library('afc',
+                  [ 'afc_listener.cc' ])
+
 mobile_fs_library = env.Library('mobile_fs_service',
             [ 'mobile_fs_service.cc' ],
             LIBS = [ proto ])
@@ -14,4 +17,4 @@ mobile_fs_library = env.Library('mobile_fs_service',
 env.Program('mobile_fs_util',
             [ 'mobile_fs_util.cc' ],
             LIBS = [ proto, fs, rpc_service, mobile_fs_library, 'fuse',
-                     'protobuf' ])
+                     'protobuf', afc ])
