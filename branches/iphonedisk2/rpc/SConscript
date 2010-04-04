@@ -21,13 +21,15 @@ env.Mig('proto_rpc')
 env.Object('rpc.cc')
 env.Object('mach_channel.cc')
 env.Object('mach_service.cc')
+
+rpc = env.Library('rpc',
+                  [ 'rpc.o' ])
+
 rpc_channel = env.Library('rpc_channel',
                   [ 'proto_rpc_user.cc',
-                    'rpc.o',
                     'mach_channel.o' ])
 rpc_service = env.Library('rpc_service',
                   [ 'proto_rpc_server.cc',
-                    'rpc.o',
                     'mach_service.o' ])
 
-Return(['rpc_channel', 'rpc_service'])
+Return(['rpc', 'rpc_channel', 'rpc_service'])

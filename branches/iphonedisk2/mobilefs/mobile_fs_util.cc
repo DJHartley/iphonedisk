@@ -7,59 +7,54 @@
 #include "fs/fs_proxy.h"
 #include "mobilefs/afc_listener.h"
 #include "mobilefs/mobile_fs_service.h"
+#include "mount/mount_service.h"
 #include "proto/fs_service.pb.h"
+#include "proto/mount_service.pb.h"
+#include "rpc/rpc.h"
 #include "test/loopback_fs_service.h"
+
+using namespace google::protobuf;
 
 struct MountArgs {
   std::string volume;
 };
 
-static fs::Filesystem* filesystem = NULL;
-static proto::FsService* service = NULL;
-
-static void Shutdown() {
-  filesystem->Unmount();
-  delete filesystem;
-  filesystem = NULL;
-  delete service;
-  service = NULL;
-}
+static proto::MountService* mounter = NULL;
 
 static void sig_handler(int signal) {
-  if (filesystem != NULL) {
-    Shutdown();
-  }
+  delete mounter;
+  mounter = NULL;
   CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 static void notify_callback(mobilefs::NotifyStatus* status,
                             void* arg) {
   struct MountArgs* mount_args = static_cast<struct MountArgs*>(arg);
-  bool exit = false;
   if (status->connection == NULL) {
     std::cout << "Device disconnected" << std::endl;
-    if (filesystem != NULL) {
-      // Unmount a previously mounted device
-      Shutdown();
-    }
+    delete mounter;
+    mounter = NULL;
   } else {
-    if (filesystem != NULL) {
+    if (mounter != NULL) {
       std::cout << "Device already mounted? Waiting for disconnect";
       return;
     }
-    service = mobilefs::NewMobileFsService(status->connection);
-    filesystem = fs::NewProxyFilesystem(service, "mobile-fs",
-                                        mount_args->volume);
-    if (!filesystem->Mount()) {
+    mounter = mount::NewMountService(
+        mobilefs::NewMobileFsService(status->connection));
+    rpc::Rpc rpc;
+    proto::MountRequest request;
+    request.set_fs_id("mobile-fs");
+    request.set_volume(mount_args->volume);
+    proto::MountResponse response;
+    mounter->Mount(&rpc, &request, &response, NewCallback(DoNothing));
+    if (rpc.Failed()) {
       std::cerr << "fs::MountFilesystem failed" << std::endl;
-      Shutdown();
-      exit = true;
+      delete mounter;
+      mounter = NULL;
+      CFRunLoopStop(CFRunLoopGetCurrent());
     } else {
       std::cerr << "Device mounted as: " << mount_args->volume << std::endl;
     }
-  }
-  if (exit) {
-    CFRunLoopStop(CFRunLoopGetCurrent());
   }
 }
 

@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <google/protobuf/service.h>
 #include <sys/stat.h>
-#include "rpc/mach_channel.h"
+#include "rpc/rpc.h"
 #include "proto/fs_service.pb.h"
 #include "proto/mount_service.pb.h"
 #include "fs/fs.h"
@@ -32,9 +32,9 @@ class Mounter : public proto::MountService {
   }
 
    virtual void Mount(google::protobuf::RpcController* rpc,
-                     const proto::MountRequest* request,
-                     proto::MountResponse* response,
-                     google::protobuf::Closure* done) {
+                      const proto::MountRequest* request,
+                      proto::MountResponse* response,
+                      google::protobuf::Closure* done) {
     std::string fs_id = request->fs_id();
     std::string volume = request->volume();
     if (proxy_fs_ != NULL) {

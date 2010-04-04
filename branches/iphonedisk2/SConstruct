@@ -12,12 +12,14 @@ if mode == 'debug':
 proto = SConscript('proto/SConscript')
 Export('proto')
 
-[ rpc_channel, rpc_service ] = SConscript('rpc/SConscript')
-Export('rpc_channel', 'rpc_service')
+[ rpc, rpc_channel, rpc_service ] = SConscript('rpc/SConscript')
+Export('rpc', 'rpc_channel', 'rpc_service')
 
 fs = SConscript('fs/SConscript')
 Export('fs')
 
+mount = SConscript('mount/SConscript')
+Export('mount')
+
 SConscript('mobilefs/SConscript')
-SConscript('mount/SConscript')
 SConscript('test/SConscript')
