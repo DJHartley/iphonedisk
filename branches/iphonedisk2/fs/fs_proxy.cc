@@ -21,10 +21,11 @@ namespace fs {
 // propper shutdown of the fuse channel.
 class MountPoint {
  public:
-  MountPoint(const std::string& volname) : channel_(NULL) {
+  MountPoint(const std::string& volname,
+             const std::string& volicon) : channel_(NULL) {
     mount_path_ = "/Volumes/";
     mount_path_.append(volname);
-    InitFuseArgs(&args_, volname);
+    InitFuseArgs(&args_, volname, volicon);
   }
 
   ~MountPoint() {
@@ -121,8 +122,10 @@ class ProxyFilesystem : public Filesystem {
  public:
   ProxyFilesystem(proto::FsService* service,
                   const std::string& fs_id,
-                  const std::string& volname)
+                  const std::string& volname,
+                  const std::string& volicon)
       : volname_(volname),
+        volicon_(volicon),
         session_(NULL) {
     pthread_mutex_init(&mutex_, NULL);
     pthread_cond_init(&cond_, NULL);
@@ -157,6 +160,7 @@ class ProxyFilesystem : public Filesystem {
     pthread_mutex_lock(&mutex_);
     if (session_ != NULL) {
       session_->MakeLoopExit();
+      syslog(LOG_INFO, "Filesystem unmounted");
     }
     pthread_mutex_unlock(&mutex_);
   }
@@ -169,7 +173,7 @@ class ProxyFilesystem : public Filesystem {
   void RunInMountThread() {
     pthread_mutex_lock(&mutex_);
 
-    MountPoint* mount_point = new MountPoint(volname_);
+    MountPoint* mount_point = new MountPoint(volname_, volicon_);
     if (!mount_point->Create()) {
       delete mount_point;
       // Wake Mount()
@@ -206,6 +210,7 @@ class ProxyFilesystem : public Filesystem {
  private:
   struct Context context_;
   std::string volname_;
+  std::string volicon_;
 
   // Background thread that actually runs the filesystem loop
   pthread_t thread_;
@@ -224,8 +229,9 @@ static void* StartMountThread(void* data) {
 
 Filesystem* NewProxyFilesystem(proto::FsService* service,
                                const std::string& fs_id,
-                               const std::string& volname) {
-  return new ProxyFilesystem(service, fs_id, volname);
+                               const std::string& volname,
+                               const std::string& volicon) {
+  return new ProxyFilesystem(service, fs_id, volname, volicon);
 }
 
 }  // namespace fs

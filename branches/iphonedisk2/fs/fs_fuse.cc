@@ -266,7 +266,8 @@ void InitFuseOps(struct fuse_operations* fuse_op) {
   fuse_op->utimens  = fs_utimens;
 }
 
-void InitFuseArgs(struct fuse_args* args, const std::string& volname) {
+void InitFuseArgs(struct fuse_args* args, const std::string& volname,
+                  const std::string& volicon) {
   *args = (struct fuse_args)FUSE_ARGS_INIT(0, NULL);
   fuse_opt_add_arg(args, "-d");
 #ifdef DEBUG
@@ -276,6 +277,13 @@ void InitFuseArgs(struct fuse_args* args, const std::string& volname) {
   std::string volname_arg("-ovolname=");
   volname_arg.append(volname);
   fuse_opt_add_arg(args, volname_arg.c_str());
+  if (!volicon.empty()) {
+    std::string volicon_arg("-ovolicon=");
+    volicon_arg.append(volicon);
+    fuse_opt_add_arg(args, volicon_arg.c_str());
+  }
+  // Mount the device on the desktop
+  fuse_opt_add_arg(args, "-olocal");
 }
 
 }  // namespace fs

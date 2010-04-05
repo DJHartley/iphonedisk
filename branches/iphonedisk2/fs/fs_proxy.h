@@ -18,7 +18,8 @@ class Filesystem;
 
 Filesystem* NewProxyFilesystem(proto::FsService* service,
                                const std::string& fs_id,
-                               const std::string& volname);
+                               const std::string& volname,
+                               const std::string& volicon);
 
 }  // namespace fs
 

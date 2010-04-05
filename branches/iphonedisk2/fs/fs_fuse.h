@@ -37,7 +37,8 @@ struct Context {
 void InitFuseOps(struct fuse_operations* fuse_op);
 
 // Initialize the FuseArgs datastructure for mounting the specified volume
-void InitFuseArgs(struct fuse_args* args, const std::string& volname);
+void InitFuseArgs(struct fuse_args* args, const std::string& volname,
+                  const std::string& volicon);
 
 }  // namespace fs
 

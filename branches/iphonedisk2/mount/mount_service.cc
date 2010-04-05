@@ -17,8 +17,10 @@ namespace {
 
 class Mounter : public proto::MountService {
  public:
-  Mounter(proto::FsService* service)
+  Mounter(proto::FsService* service,
+          const std::string& volicon)
       : service_(service), 
+        volicon_(volicon),
         proxy_fs_(NULL) { }
 
   virtual ~Mounter() {
@@ -40,7 +42,7 @@ class Mounter : public proto::MountService {
     if (proxy_fs_ != NULL) {
       rpc->SetFailed("Filesystem already mounted");
     } else {
-      proxy_fs_ = fs::NewProxyFilesystem(service_, fs_id, volume);
+      proxy_fs_ = fs::NewProxyFilesystem(service_, fs_id, volume, volicon_);
       if (!proxy_fs_->Mount()) {
         rpc->SetFailed("Failed to mount proxy filesystem");
         proxy_fs_ = NULL;
@@ -69,6 +71,7 @@ class Mounter : public proto::MountService {
 
  private:
   proto::FsService* service_;
+  std::string volicon_;
   // TODO(allen): Can this be a map of filesystems? I think the fuse code needs
   // to be static-free before this is possible.
   fs::Filesystem* proxy_fs_;
@@ -78,8 +81,9 @@ class Mounter : public proto::MountService {
 
 namespace mount {
 
-proto::MountService* NewMountService(proto::FsService* fs_service) {
-  return new Mounter(fs_service);
+proto::MountService* NewMountService(proto::FsService* fs_service,
+                                     const std::string& volicon) {
+  return new Mounter(fs_service, volicon);
 }
 
 }  // namespace fs

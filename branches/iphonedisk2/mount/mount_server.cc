@@ -12,9 +12,9 @@
 
 int main(int argc, char* argv[]) {
   openlog("mount_server", LOG_PERROR | LOG_PID, LOG_DAEMON);
-  if (argc != 3) {
-    syslog(LOG_ERR, "Usage: %s <mount service name> <fs service name>",
-           argv[0]);
+  if (argc != 4) {
+    syslog(LOG_ERR, "Usage: %s <mount service name> <fs service name> "
+           "<volicon>", argv[0]);
     return 1;
   }
   const std::string mount_service_name(argv[1]);
@@ -24,8 +24,9 @@ int main(int argc, char* argv[]) {
     syslog(LOG_ERR, "Failed to create service: %s", fs_service_name.c_str());
     return 1;
   }
+  const std::string volicon(argv[3]);
   proto::FsService* fs_service = new proto::FsService::Stub(channel);
-  proto::MountService* service = mount::NewMountService(fs_service);
+  proto::MountService* service = mount::NewMountService(fs_service, volicon);
   if (!rpc::ExportService(mount_service_name, service)) {
     syslog(LOG_ERR, "Failed to export: %s", mount_service_name.c_str());
     delete service;

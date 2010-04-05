@@ -15,6 +15,7 @@ using namespace google::protobuf;
 
 struct MountArgs {
   std::string volume;
+  std::string volicon;
 };
 
 static proto::MountService* mounter = NULL;
@@ -37,8 +38,10 @@ static void notify_callback(mobilefs::NotifyStatus* status,
       syslog(LOG_DEBUG, "Device already mounted");
       return;
     }
+    syslog(LOG_INFO, "Device connected");
     mounter = mount::NewMountService(
-        mobilefs::NewMobileFsService(status->connection));
+        mobilefs::NewMobileFsService(status->connection),
+        mount_args->volicon);
     rpc::Rpc rpc;
     proto::MountRequest request;
     request.set_fs_id("mobile-fs");
@@ -61,15 +64,16 @@ int main(int argc, char* argv[]) {
 #else
   setlogmask(LOG_UPTO(LOG_INFO));
 #endif
-  if (argc != 3) {
-    syslog(LOG_ERR, "Usage: %s <volume> <afc service>", argv[0]);
+  if (argc != 4) {
+    syslog(LOG_ERR, "Usage: %s <volume> <volicon> <afc service>", argv[0]);
     return 1;
   }
   signal(SIGINT, sig_handler);
 
   struct MountArgs args;
   args.volume = argv[1];
-  mobilefs::AfcListener listener(argv[2]);
+  args.volicon = argv[2];
+  mobilefs::AfcListener listener(argv[3]);
   if (!listener.SetNotifyCallback(&notify_callback, &args)) {
     syslog(LOG_ERR, "Failed to initialize device listener");
     closelog();

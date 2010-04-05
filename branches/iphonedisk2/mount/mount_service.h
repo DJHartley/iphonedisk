@@ -13,7 +13,8 @@ class MountService;
 namespace mount {
 
 // Takes ownership of fs_service
-proto::MountService* NewMountService(proto::FsService* fs_service);
+proto::MountService* NewMountService(proto::FsService* fs_service,
+                                     const std::string& volicon);
 
 }  // namespace
 
