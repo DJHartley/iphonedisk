@@ -2,11 +2,11 @@
 
 #include "mount/mount_service.h"
 
-#include <iostream>
 #include <string>
 #include <errno.h>
 #include <google/protobuf/service.h>
 #include <sys/stat.h>
+#include <syslog.h>
 #include "rpc/rpc.h"
 #include "proto/fs_service.pb.h"
 #include "proto/mount_service.pb.h"
@@ -24,7 +24,7 @@ class Mounter : public proto::MountService {
   virtual ~Mounter() {
     if (proxy_fs_ != NULL) {
       // A filesystem was mounted!
-      std::cout << "Abandoning proxy filesystem" << std::endl;
+      syslog(LOG_INFO, "Abandoning proxy filesystem");
       proxy_fs_->Unmount();
       delete proxy_fs_;
     }
@@ -46,7 +46,7 @@ class Mounter : public proto::MountService {
         proxy_fs_ = NULL;
         delete proxy_fs_;
       } else {
-        std::cout << "Mounted " << fs_id << " as " << volume << std::endl;
+        syslog(LOG_INFO, "Mounted %s as %s", fs_id.c_str(), volume.c_str());
       }
     }
     done->Run();
@@ -60,7 +60,7 @@ class Mounter : public proto::MountService {
       rpc->SetFailed("Filesystem not mounted");
     } else {
       proxy_fs_->Unmount();
-      std::cout << "Unmounted filesystem" << std::endl;
+      syslog(LOG_INFO, "Unmounted filesystem");
       delete proxy_fs_;
       proxy_fs_ = NULL;
     }

@@ -2,14 +2,13 @@
 
 #include "rpc/mach_service.h"
 
-#include <iostream>
 #include <string>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
 #include <google/protobuf/service.h>
 #include <mach/mach.h>
 #include <servers/bootstrap.h>
-#include <sys/syslog.h>
+#include <syslog.h>
 #include "rpc/proto_rpc_server.h"
 #include "rpc/rpc.h"
 
@@ -26,13 +25,13 @@ static const google::protobuf::MethodDescriptor* FindMethod(
       const std::string& service_name,
       const std::string& method_name) {
   if (g_service_desc->name() != service_name) {
-    std::cerr << "Unknown service name: " << service_name << std::endl;
+    syslog(LOG_ERR, "Uknown service name: %s", service_name.c_str());
     return NULL;
   }
   const google::protobuf::MethodDescriptor* method =
       g_service_desc->FindMethodByName(method_name);
   if (method == NULL) {
-    std::cerr << "Unknown method name: " << method_name << std::endl;
+    syslog(LOG_ERR, "Uknown method name: %s", method_name.c_str());
     return NULL;
   }
   return method;
@@ -72,38 +71,46 @@ kern_return_t call_method(
   }
 
   assert(g_service != NULL);
-  const google::protobuf::MethodDescriptor* method =
-      FindMethod(std::string(service_name, service_nameCnt),
-                 std::string(method_name, method_nameCnt));
-  if (method == NULL) {
+  const std::string& service = std::string(service_name, service_nameCnt);
+  const std::string& method = std::string(method_name, method_nameCnt);
+  const google::protobuf::MethodDescriptor* method_desc =
+      FindMethod(service, method);
+  if (method_desc == NULL) {
     // Method or service name was incorrect
     return KERN_INVALID_ARGUMENT;
   }
   google::protobuf::Message* request;
   google::protobuf::Message* response;
-  AllocateProtocolMessages(method, &request, &response);
+  AllocateProtocolMessages(method_desc, &request, &response);
 
   rpc::Rpc rpc;
   kern_return_t kr;
   if (!request->ParseFromArray(request_bytes, request_bytesCnt)) {
-    std::cerr << "Unable to parse request message" << std::endl;
+    syslog(LOG_ERR, "%s.%s: Unable to parse request message",
+           service.c_str(), method.c_str());
     kr = KERN_INVALID_ARGUMENT;
   } else {
-    g_service->CallMethod(method, &rpc, request, response,
+    g_service->CallMethod(method_desc, &rpc, request, response,
                           google::protobuf::NewCallback(
                               &google::protobuf::DoNothing));
     if (rpc.Failed()) {
       kr = KERN_SUCCESS;
       *status = -1;
       const std::string& error_text = rpc.ErrorText();
+      syslog(LOG_DEBUG, "%s.%s: RPC Error: %s",
+             service.c_str(), method.c_str(), error_text.c_str());
       *response_bytes = (char*)error_text.c_str();
       *response_bytesCnt = error_text.size();
     } else {
       if (!response->SerializeToString(raw_response)) {
-        std::cerr << "Unable to serialize response message" << std::endl;
+        syslog(LOG_ERR, "%s.%s: Unable to serialize response message",
+               service.c_str(), method.c_str());
         kr = KERN_INVALID_ARGUMENT;
       } else {
         kr = KERN_SUCCESS;
+        syslog(LOG_DEBUG, "REQ: %s; RESP: %s",
+               request->ShortDebugString().c_str(),
+               response->ShortDebugString().c_str());
         *status = 0;
         *response_bytes = (char*)raw_response->data();
         *response_bytesCnt = raw_response->size();
@@ -125,16 +132,16 @@ bool ExportService(const std::string& service_name,
   kr = bootstrap_check_in(bootstrap_port, (char*)service_name.c_str(),
                           &server_port);
   if (kr != KERN_SUCCESS) {
-    mach_error("bootstrap_check_in:", kr);
+    syslog(LOG_ERR, "bootstrap_check_in: %s", mach_error_string(kr));
     return false;
   }
-  std::cout << "mach_msg_server: starting " << service_name << std::endl;
+  syslog(LOG_INFO, "Starting mach service: %s", service_name.c_str());
   g_service = service;
   g_service_desc = service->GetDescriptor();
   kr = mach_msg_server(proto_rpc_server,
       sizeof(__Request__call_method_t), server_port, MACH_MSG_TIMEOUT_NONE);
   if (kr != KERN_SUCCESS) {
-    mach_error("mach_msg_server:", kr);
+    syslog(LOG_ERR, "mach_msg_server: %s", mach_error_string(kr));
   }
 
   // TODO(allen): This doesn't seem quite correct.  mach_port_destroy?  This
@@ -142,7 +149,7 @@ bool ExportService(const std::string& service_name,
   // clean shutdown should be possible.
   mach_port_deallocate(mach_task_self(), server_port);
   g_service = NULL;
-  return true;
+  return (kr == KERN_SUCCESS);
 }
 
 }  // namespace rpc

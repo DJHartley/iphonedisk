@@ -5,7 +5,8 @@
 
 #include "mobilefs/afc_listener.h"
 
-#include <iostream>
+#include <string>
+#include <syslog.h>
 
 namespace mobilefs {
 
@@ -38,7 +39,7 @@ bool AfcListener::SetNotifyCallback(NotifyCallback callback, void* user_data) {
   int ret = AMDeviceNotificationSubscribe(&notify_callback, 0, 0, this,
                                           &notification_);
   if (ret != MDERR_OK) {
-    std::cerr << "AMDeviceNotificationSubscribe failed" << std::endl;
+    syslog(LOG_ERR, "AMDeviceNotificationSubscribe failed");
     return false;
   }
   user_callback_ = callback;
@@ -61,7 +62,7 @@ void AfcListener::DeviceCallback(am_device_notification_callback_info* info) {
     if (connection_ != NULL) {
       int ret = AFCConnectionClose(connection_);
       if (ret != MDERR_OK) {
-        std::cerr << "AFCConnectionClose failed" << std::endl;
+        syslog(LOG_ERR, "AFCConnectionClose failed");
       }
       connection_ = NULL;
     }
@@ -74,21 +75,21 @@ void AfcListener::DeviceCallback(am_device_notification_callback_info* info) {
 bool AfcListener::InitializeDevice(am_device* device) {
   int ret = AMDeviceConnect(device);
   if (ret != MDERR_OK) {
-    std::cerr << "AMDeviceConnect failed" << std::endl;
+    syslog(LOG_ERR, "AMDeviceConnect failed");
     return false;
   }
   if (AMDeviceIsPaired(device) == 0) {
-    std::cerr << "Device was not paired" << std::endl;
+    syslog(LOG_ERR, "Device was not paired");
     return false;
   }
   ret = AMDeviceValidatePairing(device);
   if (ret != MDERR_OK) {
-    std::cerr << "AMDeviceValidatePairing failed" << std::endl;
+    syslog(LOG_ERR, "AMDeviceValidatePairing failed");
     return false;
   }
   ret = AMDeviceStartSession(device);
   if (ret != MDERR_OK) {
-    std::cerr << "AMDeviceStartSession failed" << std::endl;
+    syslog(LOG_ERR, "AMDeviceStartSession failed");
     return false;
   }
   return true;
@@ -98,15 +99,15 @@ bool AfcListener::OpenConnection(am_device* device) {
   int socket;
   int ret = AMDeviceStartService(device, afc_service_name_, &socket);
   if (ret != MDERR_OK) {
-    std::cerr << "AMDeviceStartService failed" << std::endl;
+    syslog(LOG_ERR, "AMDeviceStartService failed");
     return false;
   }
   ret = AFCConnectionOpen(socket, 0, &connection_);
   if (ret != MDERR_OK) {
-    std::cerr << "AFCConnectionOpen failed" << std::endl;
+    syslog(LOG_ERR, "AFCConnectionOpen failed");
     return false;
   }
-  std::cout << "AFCConnection established" << std::endl;
+  syslog(LOG_INFO, "AFC Connection established");
   return true;
 }
 

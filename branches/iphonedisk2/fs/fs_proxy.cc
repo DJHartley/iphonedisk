@@ -5,12 +5,12 @@
 
 #include "fs/fs_proxy.h"
 
-#include <iostream>
 #include <string>
 #include <fuse/fuse.h>
 #include <fuse/fuse_lowlevel.h>
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <syslog.h>
 #include "proto/fs_service.pb.h"
 #include "fs/fs.h"
 #include "fs/fs_fuse.h"
@@ -42,7 +42,7 @@ class MountPoint {
 
     channel_ = fuse_mount(mount_path_.c_str(), &args_);
     if (channel_ == NULL) {
-      std::cerr << "fuse_mount() failed" << std::endl;
+      syslog(LOG_ERR, "fuse_mount() failed");
       return false;
     }
     return true;
@@ -83,7 +83,7 @@ class Session {
     fuse_ = fuse_new(mount_point_->channel(), mount_point_->args(), &fuse_ops_,
                      sizeof(fuse_ops_), context);
     if (fuse_ == NULL) {
-      std::cerr << "fuse_new() failed" << std::endl;
+      syslog(LOG_INFO, "fuse_new() failed");
       return false;
     }
     return true;
@@ -142,7 +142,7 @@ class ProxyFilesystem : public Filesystem {
   virtual bool Mount() {
     int rc = pthread_create(&thread_, NULL, &StartMountThread, this);
     if (rc) {
-      std::cerr << "pthread_create() failed" << std::endl;
+      syslog(LOG_ERR, "pthread_create() failed: %m");
       return false;
     }
     // Block until RunInMountThread is actually running

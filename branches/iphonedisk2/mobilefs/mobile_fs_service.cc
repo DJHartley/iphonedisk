@@ -2,10 +2,10 @@
 
 #include "mobilefs/mobile_fs_service.h"
 
-#include <iostream>
 #include <string>
 #include <set>
 #include <sys/stat.h>
+#include <syslog.h>
 #include "proto/fs_service.pb.h"
 #include "mobilefs/mobiledevice.h"
 
@@ -13,19 +13,6 @@ namespace mobilefs {
 
 using ::google::protobuf::Closure;
 using ::google::protobuf::RpcController;
-
-#ifdef DEBUG
-#define LOG_FAILURE(x) { \
-    std::cout << "RPC Failure: " << x->ErrorText() << std::endl; \
-  }
-#define LOG_SUCCESS(x, y) { \
-  std::cout << "REQ:" << x->ShortDebugString() << "; RESP: " \
-            << y->ShortDebugString() << std::endl; \
-  }
-#else
-#define LOG_FAILURE(x) (void)x
-#define LOG_SUCCESS(x, y) (void)x; (void)y
-#endif 
 
 static const int kMaxBufferSize = 1024 * 1024;
 
@@ -68,11 +55,6 @@ class MobileFsService : public proto::FsService {
         }
       }
     }
-    if (rpc->Failed()) {
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
-    }
     done->Run();
   }
 
@@ -99,11 +81,6 @@ class MobileFsService : public proto::FsService {
       } while (buffer != NULL);
       AFCDirectoryClose(conn_, dir);
     }
-    if (rpc->Failed()) {
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
-    }
     done->Run();
   }
 
@@ -114,9 +91,6 @@ class MobileFsService : public proto::FsService {
     int res = AFCRemovePath(conn_, request->path().c_str());
     if (res != MDERR_OK) {
       rpc->SetFailed("AFCRemovePath failed");
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -128,9 +102,6 @@ class MobileFsService : public proto::FsService {
     int res = AFCDirectoryCreate(conn_, request->path().c_str());
     if (res != MDERR_OK) {
       rpc->SetFailed("AFCDirectoryCreate failed");
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -143,9 +114,6 @@ class MobileFsService : public proto::FsService {
                             request->destination_path().c_str());
     if (res != MDERR_OK) {
       rpc->SetFailed("AFCRenamePath failed");
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -159,10 +127,8 @@ class MobileFsService : public proto::FsService {
     int ret = AFCFileRefOpen(conn_, request->path().c_str(), mode, &fd);
     if (ret != MDERR_OK) {
       rpc->SetFailed("AFCFileRefOpen failed");
-      LOG_FAILURE(rpc);
     } else {
       response->set_filehandle(fd);
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -175,10 +141,8 @@ class MobileFsService : public proto::FsService {
     int ret = AFCFileRefOpen(conn_, request->path().c_str(), 3, &fd);
     if (ret != MDERR_OK) {
       rpc->SetFailed("AFCFileRefOpen failed");
-      LOG_FAILURE(rpc);
     } else {
       response->set_filehandle(fd);
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -188,7 +152,6 @@ class MobileFsService : public proto::FsService {
                proto::ReleaseResponse* response,
                Closure* done) {
     AFCFileRefClose(conn_, request->filehandle());
-    LOG_SUCCESS(request, response);
     done->Run();
   }
 
@@ -198,11 +161,11 @@ class MobileFsService : public proto::FsService {
             Closure* done) {
     if (request->size() > kMaxBufferSize) {
       rpc->SetFailed("Read request too large");
-      LOG_FAILURE(rpc);
       done->Run();
       return;
     }
-    int ret = AFCFileRefSeek(conn_, request->filehandle(), request->offset(), 0);
+    int ret = AFCFileRefSeek(conn_, request->filehandle(), request->offset(),
+                             0);
     if (ret != MDERR_OK) {
       rpc->SetFailed("AFCFileRefSeek failed");
     } else {
@@ -215,11 +178,6 @@ class MobileFsService : public proto::FsService {
         response->mutable_buffer()->assign((char*)buf, n);
       }
       free(buf);
-    }
-    if (rpc->Failed()) {
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -240,11 +198,6 @@ class MobileFsService : public proto::FsService {
           rpc->SetFailed("AFCFileWrite failed");
         }
       }
-      if (rpc->Failed()) {
-        LOG_FAILURE(rpc);
-      } else {
-        LOG_SUCCESS(request, response);
-      }
     }
     done->Run();
   }
@@ -263,11 +216,6 @@ class MobileFsService : public proto::FsService {
       if (ret != MDERR_OK) {
         rpc->SetFailed("AFCFileRefSetFileSize failed");
       }
-    }
-    if (rpc->Failed()) {
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }
@@ -297,11 +245,6 @@ class MobileFsService : public proto::FsService {
         stat->set_blocks(total_bytes / block_size);
         stat->set_bfree(free_bytes / block_size);
       }
-    }
-    if (rpc->Failed()) {
-      LOG_FAILURE(rpc);
-    } else {
-      LOG_SUCCESS(request, response);
     }
     done->Run();
   }

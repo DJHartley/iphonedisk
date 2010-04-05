@@ -1,8 +1,8 @@
 // Author: Allen Porter <allen@thebends.org>
 
-#include <iostream>
 #include <google/protobuf/service.h>
 #include <sys/stat.h>
+#include <syslog.h>
 #include "mount/mount_service.h"
 #include "proto/fs_service.pb.h"
 #include "proto/mount_service.pb.h"
@@ -11,22 +11,23 @@
 #include "rpc/mach_service.h"
 
 int main(int argc, char* argv[]) {
+  openlog("mount_server", LOG_PERROR | LOG_PID, LOG_DAEMON);
   if (argc != 3) {
-    fprintf(stderr, "Usage: %s <mount service name> <fs service name>\n",
-            argv[0]);
+    syslog(LOG_ERR, "Usage: %s <mount service name> <fs service name>",
+           argv[0]);
     return 1;
   }
   const std::string mount_service_name(argv[1]);
   const std::string fs_service_name(argv[2]);
   google::protobuf::RpcChannel* channel = rpc::NewMachChannel(fs_service_name);
   if (channel == NULL) {
-    std::cerr << "Failed to create service: " << fs_service_name << std::endl;
+    syslog(LOG_ERR, "Failed to create service: %s", fs_service_name.c_str());
     return 1;
   }
   proto::FsService* fs_service = new proto::FsService::Stub(channel);
   proto::MountService* service = mount::NewMountService(fs_service);
   if (!rpc::ExportService(mount_service_name, service)) {
-    std::cerr << "Failed to export " << mount_service_name << std::endl;
+    syslog(LOG_ERR, "Failed to export: %s", mount_service_name.c_str());
     delete service;
     return 1;
   }
