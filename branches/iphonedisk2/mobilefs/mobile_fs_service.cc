@@ -40,6 +40,7 @@ class MobileFsService : public proto::FsService {
         proto::GetAttrResponse::Stat* stat = response->mutable_stat();
         stat->set_size(atoll(info_map["st_size"].c_str()));
         stat->set_blocks(atoll(info_map["st_blocks"].c_str()));
+        // TODO(allen): Recognize S_IFBLK as a block device
         if (info_map["st_ifmt"] == "S_IFDIR") {
           stat->set_mode(S_IFDIR | 0777);
           stat->set_nlink(2);
@@ -48,7 +49,7 @@ class MobileFsService : public proto::FsService {
           stat->set_nlink(2);
         } else if (info_map["st_ifmt"] == "S_IFSOCK") {
           stat->set_mode(S_IFSOCK | 0400);
-        } else if (info_map["st_ifchr"] == "S_IFCHR") {
+        } else if (info_map["st_ifmt"] == "S_IFCHR") {
           stat->set_mode(S_IFCHR | 0400);
         } else {
           rpc->SetFailed("AFCFileInfoOpen: Unknown s_ifmt value");
