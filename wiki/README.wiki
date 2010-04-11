@@ -3,23 +3,19 @@
 
 = Introduction =
 
-iPhoneDisk is a MacFUSE filesystem plugin that allows you to read and write files on your iPhone.  It uses the MobileDevice library (like iTunes) to access the filesystem of the iPhone over a USB cable.  iPhoenDisk runs on Mac OS X, and has been tested on 10.4.10.
-
-= Requirements =
-
-You must have MacFUSE installed before running iPhoneDisk.  See [http://macfuse.googlecode.com] for install instructions.
+iPhoneDisk is a MacFUSE filesystem plugin that allows you to read and write files on your iPhone.  It uses the MobileDevice library (like iTunes) to access the filesystem of the iPhone over a USB cable.  iPhoneDisk runs on Mac OS X only.
 
 = Installation =
 
-Download the latest version of iPhoneDisk on the [http://code.google.com/p/iphonedisk/downloads/list Downloads] page.  One downloaded and extracted from the .zip file, you can simply double click the iPhoneDisk icon to start it (you should see a new icon in your status bar).  Next, connect your iPhone via the USB cable using the same process you would use to sync with iTunes.  You should now see the Media Partition of your iPhone mounted on your desktop.
+Download the latest version of iPhoneDisk on the [http://code.google.com/p/iphonedisk/downloads/list Downloads] page.  Double click the .dmg file to mount the install image, then click *Disk for iPhone.mpkg* to install the program.  The .mpkg also installs the lastest version of MacFUSE in addition to the Disk for iPhone Launch Agent.   You must restart your computer before you can use Disk for iPhone (sorry!).
 
-= Media partition =
+Once restarted, simply connect your iPhone (or similar device) to your computer over USB and the disk image will be mounted on the desktop.
 
-With an unmodified iPhone, the _com.apple.afc_ service on the iPhone will only give you access to the *Media* parititon (/var/root).  This partition is read/write by default and sufficient for personal file storage, and poking around at the iTunes Library files.
+= Advanced Settings =
 
-= Root partition =
+The arguments to the Disk for iPhone Launch Agent can be modified by editing */Library/LaunchAgents/org.thebends.iphonedisk.mobile_fs_util.plist*.
 
-To do some more useful things, consider opening access to the *Root* partition using a "jailbreak" program.  This will allow you to access ringtones, and install 3rd party applications.  iPhoneDisk does not perform the "jailbreak" for you, since it serves just as a filesystem plugin and not an all-in-one iPhone hacking utility.
+The first argument is the volume name used when the device is mounted.  The second argument is the icon shown.  The third argument is the afc service name of the Media partition (*com.apple.afc*).
 
 Most "jailbreak" programs (or manual instructions) will set up a second afc service labeled _com.apple.afc2_ with full access to the *Root* partition (/).  There are many documents about [http://www.google.com/search?q=iphone+jailbreak iphone jailbreak], but here are some links below that might be helpful:
 
