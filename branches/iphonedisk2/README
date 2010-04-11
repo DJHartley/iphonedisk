@@ -24,3 +24,13 @@ The interface looks a lot like the FUSE API.
 MountService - Exports a protocol buffer RPC service that actually mounts a
 fuse volume.  The MountService typically has a FsService channel that it uses to
 proxy all of the fuse API calls.
+
+Current Status:
+
+The current shipping iphonedisk again runs as a single process, mobile_fs_util,
+however contains now GUI.  mobile_fs_util runs as a launch agent that waits
+for an iphone USB connection.  The installer package places the launch agent
+in /Library/iphonedisk and a .plist file in /Library/Launch Agents/.  The .plist
+file has configuration parameters such as the volume icon and volume name used
+when the disk is mounted.  You must reload the agent (or your computer) any
+time the configuration parameter are changed.
