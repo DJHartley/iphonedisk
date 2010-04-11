@@ -4,6 +4,7 @@
 
 #include <string>
 #include <set>
+#include <sys/fcntl.h>
 #include <sys/stat.h>
 #include <syslog.h>
 #include "proto/fs_service.pb.h"
@@ -123,7 +124,8 @@ class MobileFsService : public proto::FsService {
             const proto::OpenRequest* request,
             proto::OpenResponse* response,
             Closure* done) {
-    int mode = ((request->flags() & 1) ? 3 : 2);
+    // O_RDONLY/O_WRONLY/O_RDWR (0/1/2) => (1/2/3)
+    int mode = (request->flags() & O_ACCMODE) + 1;
     afc_file_ref fd;
     int ret = AFCFileRefOpen(conn_, request->path().c_str(), mode, &fd);
     if (ret != MDERR_OK) {
@@ -187,17 +189,18 @@ class MobileFsService : public proto::FsService {
              const proto::WriteRequest* request,
              proto::WriteResponse* response,
              Closure* done) {
-    if (request->buffer().size() > 0) {
-      int ret = AFCFileRefSeek(conn_, request->filehandle(), request->offset(), 
-                               0);
+    int ret = AFCFileRefSeek(conn_, request->filehandle(), request->offset(),
+                             0);
+    if (ret != MDERR_OK) {
+      rpc->SetFailed("AFCFileRefSeek failed");
+    } else {
+      ret = AFCFileRefWrite(conn_, request->filehandle(),
+                            request->buffer().data(), request->buffer().size());
       if (ret != MDERR_OK) {
-        rpc->SetFailed("AFCFileRefSeek failed");
+        rpc->SetFailed("AFCFileWrite failed");
       } else {
-        ret = AFCFileRefWrite(conn_, request->filehandle(),
-                              request->buffer().data(), request->buffer().size());
-        if (ret != MDERR_OK) {
-          rpc->SetFailed("AFCFileWrite failed");
-        }
+        // Always writes the entire buffer
+        response->set_size(request->buffer().size());
       }
     }
     done->Run();

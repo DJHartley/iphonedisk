@@ -407,7 +407,7 @@ extern "C" {
   /* Opens file for reading or writing without locking it in any way. afc_file_ref should not be shared between threads - 
          * opening file in one thread and closing it in another will lead to possible crash.
    * path - UTF-8 encoded absolute path to file
-   * mode 2 = read, mode 3 = write; unknown = 0 
+   * mode 1 = read, mode 2 = write, mode 3 = read/write
    * ref - receives file handle
    */
   afc_error_t AFCFileRefOpen(struct afc_connection *conn, const char *path,
