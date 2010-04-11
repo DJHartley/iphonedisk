@@ -21,3 +21,18 @@ Most "jailbreak" programs (or manual instructions) will set up a second afc serv
 
   * [http://www.macenstein.com/ifuntastic3mirror/iFuntastic_3.0.3.zip iFuntastic 3.0.3] (easy mode)
   * [http://iphone.fiveforty.net/wiki/index.php/How_to_Escape_Jail Jailbreak tutorial with iPHUC] (hard mode)
+
+= Troubleshooting =
+
+If you run into any problems feel free to join the discussion group at http://groups.google.com/group/iphonedisk.  When posting a problem, it is helpful to include detailed log messages from the system log.  To check for relevant log messages perform these steps:
+1. Open _Console_ from Applications > Utilities.
+2. Click _All Messages_ under _LOG DATABASE QUERIES_
+3. Filter for _iphonedisk_
+
+If things are working correctly you will see messages like
+{{{
+4/10/10 2010-04-10 21:49:59 PM org.thebends.iphonedisk.mobile_fs_util[2686] mobile_fs_util: Waiting for device connection 
+4/10/10 2010-04-10 21:49:59 PM org.thebends.iphonedisk.mobile_fs_util[2686] mobile_fs_util: AFC Connection established 
+4/10/10 2010-04-10 21:49:59 PM org.thebends.iphonedisk.mobile_fs_util[2686] mobile_fs_util: Device connected 
+4/10/10 2010-04-10 21:49:59 PM org.thebends.iphonedisk.mobile_fs_util[2686] mobile_fs_util: Mounted mobile-fs as iPhoneDisk 
+}}}
