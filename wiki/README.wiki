@@ -25,9 +25,9 @@ Most "jailbreak" programs (or manual instructions) will set up a second afc serv
 = Troubleshooting =
 
 If you run into any problems feel free to join the discussion group at http://groups.google.com/group/iphonedisk.  When posting a problem, it is helpful to include detailed log messages from the system log.  To check for relevant log messages perform these steps:
-1. Open _Console_ from Applications > Utilities.
-2. Click _All Messages_ under _LOG DATABASE QUERIES_
-3. Filter for _iphonedisk_
+  # Open _Console_ from Applications > Utilities.
+  # Click _All Messages_ under _LOG DATABASE QUERIES_
+  # Filter for _iphonedisk_
 
 If things are working correctly you will see messages like
 {{{
