@@ -33,27 +33,45 @@ class MobileFsService : public proto::FsService {
       std::map<std::string, std::string> info_map;
       CreateMap(info, &info_map);
       AFCKeyValueClose(info);
-      if (info_map.find("st_size") == info_map.end() ||
-          info_map.find("st_ifmt") == info_map.end() ||
-          info_map.find("st_blocks") == info_map.end()) {
+      if (!info_map.count("st_size") ||
+          !info_map.count("st_ifmt") ||
+          !info_map.count("st_blocks")) {
         rpc->SetFailed("AFCFileInfoOpen: Mising keys");
       } else {
         proto::GetAttrResponse::Stat* stat = response->mutable_stat();
-        stat->set_size(atoll(info_map["st_size"].c_str()));
-        stat->set_blocks(atoll(info_map["st_blocks"].c_str()));
-        // TODO(allen): Recognize S_IFBLK as a block device
+        stat->set_size(atol(info_map["st_size"].c_str()));
+        stat->set_blocks(atol(info_map["st_blocks"].c_str()));
+        if (info_map.count("st_nlink")) {
+          stat->set_nlink(atol(info_map["st_nlink"].c_str()));
+        }
+        if (info_map.count("st_mtime")) {
+          long long mtime = atoll(info_map["st_mtime"].c_str());
+          stat->mutable_mtime()->set_tv_sec(mtime / 1000000000L);
+          stat->mutable_mtime()->set_tv_nsec(0);
+        }
         if (info_map["st_ifmt"] == "S_IFDIR") {
-          stat->set_mode(S_IFDIR | 0777);
-          stat->set_nlink(2);
+          stat->set_mode(S_IFDIR);
         } else if (info_map["st_ifmt"] == "S_IFREG") {
-          stat->set_mode(S_IFREG | 0666);
-          stat->set_nlink(2);
+          stat->set_mode(S_IFREG);
         } else if (info_map["st_ifmt"] == "S_IFSOCK") {
-          stat->set_mode(S_IFSOCK | 0400);
+          stat->set_mode(S_IFSOCK);
         } else if (info_map["st_ifmt"] == "S_IFCHR") {
-          stat->set_mode(S_IFCHR | 0400);
+          stat->set_mode(S_IFCHR);
+        } else if (info_map["st_ifmt"] == "S_IFBLK") {
+          stat->set_mode(S_IFBLK);
+        } else if (info_map["st_ifmt"] == "S_IFIFO") {
+          stat->set_mode(S_IFIFO);
+        } else if (info_map["st_ifmt"] == "S_IFSOCK") {
+          stat->set_mode(S_IFSOCK);
         } else {
           rpc->SetFailed("AFCFileInfoOpen: Unknown s_ifmt value");
+        }
+        if (S_ISDIR(stat->mode())) {
+          stat->set_mode(stat->mode() | 0755);
+        } else if (S_ISLNK(stat->mode())) {
+          stat->set_mode(stat->mode() | 0777);
+        } else {
+          stat->set_mode(stat->mode() | 0644);
         }
       }
     }

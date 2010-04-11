@@ -19,6 +19,8 @@ namespace fs {
 static const int kNameMax = 255;
 static const int kFiles = 110000;
 static const int kFilesFree = kFiles - 10000;
+// Default iPhone block size
+static const int kBlockSize = 4096;
 
 static google::protobuf::Closure* g_null_callback = NULL;
 
@@ -38,6 +40,7 @@ void fs_destroy(void* data) {
 int fs_getattr(const char* path, struct stat* stbuf) {
   struct Context* context =
     static_cast<struct Context*>(fuse_get_context()->private_data);
+  memset(stbuf, 0, sizeof(struct stat));
   rpc::Rpc rpc;
   proto::GetAttrRequest request;
   proto::GetAttrResponse response;
@@ -50,7 +53,16 @@ int fs_getattr(const char* path, struct stat* stbuf) {
   stbuf->st_size = response.stat().size();
   stbuf->st_blocks = response.stat().blocks();
   stbuf->st_mode = response.stat().mode();
-  stbuf->st_nlink = response.stat().nlink();
+  if (response.stat().has_nlink()) {
+    stbuf->st_nlink = response.stat().nlink();
+  }
+  if (response.stat().has_mtime()) {
+    stbuf->st_mtimespec.tv_sec = response.stat().mtime().tv_sec();
+    stbuf->st_mtimespec.tv_nsec = response.stat().mtime().tv_nsec();
+  }
+  stbuf->st_uid = getuid();
+  stbuf->st_gid = getgid();
+  stbuf->st_blksize = kBlockSize; 
   return 0; 
 }
 

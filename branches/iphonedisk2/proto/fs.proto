@@ -16,7 +16,12 @@ message GetAttrResponse {
     required int32 size = 1;
     required int32 blocks = 2;
     required int32 mode = 3;
-    required int32 nlink = 4;
+    optional int32 nlink = 4;
+    message Time {
+      required int32 tv_sec = 1;
+      required int32 tv_nsec = 2;
+    }
+    optional Time mtime = 5;
   }
   optional Stat stat = 1;
 }
