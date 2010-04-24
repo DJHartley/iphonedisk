@@ -1,0 +1,139 @@
+// Author: Allen Porter <allen@thebends.org>
+
+package proto;
+
+message Header {
+  required string fs_id = 1;
+}
+
+message GetAttrRequest {
+  required Header header = 1;
+  required string path = 2;
+}
+
+message GetAttrResponse {
+  message Stat {
+    required int32 size = 1;
+    required int32 blocks = 2;
+    required int32 mode = 3;
+    optional int32 nlink = 4;
+    message Time {
+      required int32 tv_sec = 1;
+      required int32 tv_nsec = 2;
+    }
+    optional Time mtime = 5;
+  }
+  optional Stat stat = 1;
+}
+
+message ReadDirRequest {
+  required Header header = 1;
+  required string path = 2;
+}
+
+message ReadDirResponse {
+  message Entry {
+    required string filename = 1;
+  }
+  repeated Entry entry = 1;
+}
+
+message UnlinkRequest {
+  required Header header = 1;
+  required string path = 2;
+}
+
+message UnlinkResponse {
+}
+
+message MkDirRequest {
+  required Header header = 1;
+  required string path = 2;
+  required int32 mode = 3;
+}
+
+message MkDirResponse {
+}
+
+message RenameRequest {
+  required Header header = 1;
+  required string source_path = 2;
+  required string destination_path = 3;
+}
+
+message RenameResponse {
+}
+
+message OpenRequest {
+  required Header header = 1;
+  required string path = 2;
+  required int32 flags = 3;
+}
+
+message OpenResponse {
+  optional int32 filehandle = 1;
+}
+
+message CreateRequest {
+  required Header header = 1;
+  required string path = 2;
+  required int32 flags = 3;
+  required int32 mode = 4;
+}
+
+message CreateResponse {
+  optional int32 filehandle = 1;
+}
+
+message ReleaseRequest {
+  required Header header = 1;
+  required int32 filehandle = 2;
+}
+
+message ReleaseResponse {
+}
+
+message ReadRequest {
+  required Header header = 1;
+  required int32 filehandle = 2;
+  required int32 size = 3;
+  required int32 offset = 4;
+}
+
+message ReadResponse {
+  optional bytes buffer = 1;
+}
+
+message WriteRequest {
+  required Header header = 1;
+  required int32 filehandle = 2;
+  required int32 offset = 3;
+  required bytes buffer = 4;
+}
+
+message WriteResponse {
+  required int32 size = 1;
+}
+
+message TruncateRequest {
+  required Header header = 1;
+  required string path = 2;
+  required int32 offset = 3;
+}
+
+message TruncateResponse {
+}
+
+message StatFsRequest {
+  required Header header = 1;
+}
+
+message StatFsResponse {
+  message Stat {
+    required int32 bsize = 1;
+    required int32 frsize = 2;
+    required int32 blocks = 3;
+    required int32 bfree = 4;
+  }
+  optional Stat stat = 1;
+}

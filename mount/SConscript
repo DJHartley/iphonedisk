@@ -1,0 +1,24 @@
+Import('env')
+env = env.Clone()
+Import('proto')
+Import('fs')
+Import('rpc')
+Import('rpc_channel')
+Import('rpc_service')
+
+mount = env.Library('mount', [ 'mount_service.cc' ])
+
+mount_server = env.Program('mount_server',
+                           [ 'mount_server.cc' ],
+                           LIBS = [ proto, rpc, rpc_channel, rpc_service, fs,
+                                    'protobuf', 'fuse', mount ])
+Depends(mount_server, [ proto, fs, rpc_channel, rpc_service ])
+
+mount_util = env.Program('mount_util',
+                         [ 'mount_util.cc' ],
+                         LIBS = [ proto, rpc, rpc_channel, 'protobuf' ])
+umount_util = env.Program('umount_util',
+                           [ 'umount_util.cc' ],
+                           LIBS = [ proto, rpc, rpc_channel, 'protobuf' ])
+
+Return('mount')

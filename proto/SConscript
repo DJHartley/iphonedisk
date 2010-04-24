@@ -1,0 +1,35 @@
+# Author: Allen Porter <allen@thebends.org>
+#
+# Protocol buffer definitions for iphonedisk.  See
+# http://code.google.com/apis/protocolbuffers/docs/overview.html for more
+# information on protocol buffers.
+
+Import('env')
+env = env.Clone()
+
+def genfiles(target, source, env):
+  targets = [ '%s.pb.h' % target[0],
+              '%s.pb.cc' % target[0] ]
+  return targets, source
+
+protoc_bld = Builder(action = 'protoc $SOURCE --cpp_out=.',
+                     emitter = genfiles,
+                     src_suffix = '.proto')
+
+env.Append(BUILDERS = { 'Protoc' : protoc_bld })
+
+fs = env.Protoc('fs')
+fs_service = env.Protoc('fs_service')
+env.Depends(fs_service, fs)
+
+env.Protoc('mount_service')
+
+proto = env.Library('fs_proto',
+    [ 'fs.pb.cc',
+      'fs.pb.h',
+      'fs_service.pb.cc',
+      'fs_service.pb.h',
+      'mount_service.pb.cc',
+      'mount_service.pb.h',
+      ])
+Return('proto')

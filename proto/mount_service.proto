@@ -1,0 +1,24 @@
+// Author: Allen Porter <allen@thebends.org>
+
+package proto;
+
+message MountRequest {
+  required string fs_id = 1; 
+  required string volume = 2;
+}
+
+message MountResponse {
+}
+
+message UnmountRequest {
+  required string fs_id = 1; 
+  required string volume = 2;
+}
+
+message UnmountResponse {
+}
+
+service MountService {
+  rpc Mount (MountRequest) returns (MountResponse);
+  rpc Unmount (UnmountRequest) returns (UnmountResponse);
+}

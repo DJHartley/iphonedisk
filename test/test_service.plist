@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN http://www.apple.com/DTDs/PropertyList-1.0.dtd >
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>org.thebends.iphonedisk.test_service</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/aporter/Documents/iphonedisk/branches/iphonedisk2/test/test_service</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+    <key>MachServices</key>
+    <dict>
+      <key>org.thebends.iphonedisk.test_service.rpc</key>
+      <true/>
+    </dict>
+    <key>Debug</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/test_service.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/test_service.err</string>
+  </dict>
+</plist>
+

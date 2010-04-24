@@ -1,0 +1,24 @@
+Import('env')
+Import('rpc')
+Import('rpc_channel')
+Import('rpc_service')
+Import('proto')
+Import('fs')
+
+env.Program('test_service.cc', LIBS=[ rpc, rpc_service, proto, 'protobuf' ])
+env.Program('test_client.cc', LIBS=[ rpc, rpc_channel, proto, 'protobuf' ])
+
+loopback_fs_service = env.Library('loopback_fs_service',
+                                  [ 'loopback_fs_service.cc' ])
+
+loopback_fs_server = env.Program('loopback_fs_server',
+                                 [ 'loopback_fs_server.cc' ],
+                                 LIBS = [ loopback_fs_service, proto, rpc,
+                                          rpc_service, 'protobuf', 'fuse' ])
+
+env.Append(CPPFLAGS = '-D_FILE_OFFSET_BITS=64 -D__FreeBSD__=10 -DFUSE_USE_VERSION=26')
+
+env.Program('loopback_fs_util',
+            [ 'loopback_fs_util.cc' ],
+            LIBS = [ fs, rpc, rpc_channel, loopback_fs_service, proto,
+                     'protobuf', 'fuse' ])

@@ -1,0 +1,32 @@
+protobuf
+--------
+Download and install from http://code.google.com/p/protobuf/
+$ tar zxvf protobuf-2.3.0.tar.gz 
+$ cd protobuf-2.3.0
+$ ./configure
+$ make
+$ sudo make install
+
+scons
+-----
+Download and install from http://www.scons.org/download.php
+$ tar zxvf scons-1.2.0.tar.gz 
+$ cd scons-1.2.0
+$ sudo python setup.py install
+
+MacFuse
+-------
+Download and install from http://code.google.com/p/macfuse/
+
+iphonedisk
+----------
+$ scons
+
+
+Packaging "Disk for iPhone"
+---------------------------
+The installer project "Disk for iPhone" in th pkg/ subdirectory can be built
+with the Iceberg installer, available from:
+  http://s.sudre.free.fr/Software/Iceberg.html
+The installer project depends on MacFUSE.pkg being placed in the pkg/
+subdirectory.

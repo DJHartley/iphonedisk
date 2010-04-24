@@ -1,0 +1,22 @@
+// Author: Allen Porter <allen@thebends.org>
+//
+// FsService defines a filesystem API.
+
+import "proto/fs.proto";
+
+package proto;
+
+service FsService {
+  rpc GetAttr (GetAttrRequest) returns (GetAttrResponse);
+  rpc ReadDir (ReadDirRequest) returns (ReadDirResponse);
+  rpc Open (OpenRequest) returns (OpenResponse);
+  rpc Create (CreateRequest) returns (CreateResponse);
+  rpc Release (ReleaseRequest) returns (ReleaseResponse);
+  rpc Read (ReadRequest) returns (ReadResponse);
+  rpc Write (WriteRequest) returns (WriteResponse);
+  rpc Truncate (TruncateRequest) returns (TruncateResponse);
+  rpc Unlink (UnlinkRequest) returns (UnlinkResponse);
+  rpc Rename (RenameRequest) returns (RenameResponse);
+  rpc MkDir (MkDirRequest) returns (MkDirResponse);
+  rpc StatFs (StatFsRequest) returns (StatFsResponse);
+}
