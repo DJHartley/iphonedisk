@@ -70,6 +70,22 @@ int fs_getattr(const char* path, struct stat* stbuf) {
   return 0; 
 }
 
+int fs_readlink(const char* path, char *buf, size_t bufsize) {
+  struct Context* context =
+    static_cast<struct Context*>(fuse_get_context()->private_data);
+  rpc::Rpc rpc;
+  proto::ReadLinkRequest request;
+  proto::ReadLinkResponse response;
+  request.mutable_header()->set_fs_id(context->fs_id);
+  request.set_path(path);
+  context->service->ReadLink(&rpc, &request, &response, g_null_callback);
+  if (rpc.Failed()) {
+    return -ENOENT;
+  }
+  strncpy(buf, response.destination().c_str(), bufsize);
+  return 0; 
+}
+
 int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi) {
   struct Context* context =
@@ -85,13 +101,7 @@ int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   }
   for (int i = 0; i < response.entry_size(); ++i) {
     const proto::ReadDirResponse::Entry& entry = response.entry(i);
-    struct stat stbuf;
-    struct stat* stbuf_ptr = NULL;
-    if (entry.has_stat()) {
-      fill_stat(entry.stat(), &stbuf);
-      stbuf_ptr = &stbuf;
-    }
-    if (filler(buf, entry.filename().c_str(), stbuf_ptr, 0) != 0) {
+    if (filler(buf, entry.filename().c_str(), NULL, 0) != 0) {
       return -ENOENT;
     }
   }
@@ -274,6 +284,7 @@ void InitFuseOps(struct fuse_operations* fuse_op) {
   fuse_op->init     = fs_init;
   fuse_op->destroy  = fs_destroy;
   fuse_op->getattr  = fs_getattr;
+  fuse_op->readlink = fs_readlink;
   fuse_op->readdir  = fs_readdir;
   fuse_op->open     = fs_open;
   fuse_op->create   = fs_create;

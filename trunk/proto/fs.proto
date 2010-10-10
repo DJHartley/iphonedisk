@@ -27,6 +27,15 @@ message GetAttrResponse {
   optional Stat stat = 1;
 }
 
+message ReadLinkRequest {
+  required Header header = 1;
+  required string path = 2;
+}
+
+message ReadLinkResponse {
+  optional string destination = 1;
+}
+
 message ReadDirRequest {
   required Header header = 1;
   required string path = 2;

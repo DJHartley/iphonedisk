@@ -8,6 +8,7 @@ package proto;
 
 service FsService {
   rpc GetAttr (GetAttrRequest) returns (GetAttrResponse);
+  rpc ReadLink (ReadLinkRequest) returns (ReadLinkResponse);
   rpc ReadDir (ReadDirRequest) returns (ReadDirResponse);
   rpc Open (OpenRequest) returns (OpenResponse);
   rpc Create (CreateRequest) returns (CreateResponse);
