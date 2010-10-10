@@ -37,6 +37,22 @@ void fs_destroy(void* data) {
   syslog(LOG_DEBUG, "fs_destroy: %s", context->fs_id.c_str());
 }
 
+void fill_stat(const proto::Stat& stat, struct stat* stbuf) {
+  stbuf->st_size = stat.size();
+  stbuf->st_blocks = stat.blocks();
+  stbuf->st_mode = stat.mode();
+  if (stat.has_nlink()) {
+    stbuf->st_nlink = stat.nlink();
+  }
+  if (stat.has_mtime()) {
+    stbuf->st_mtimespec.tv_sec = stat.mtime().tv_sec();
+    stbuf->st_mtimespec.tv_nsec = stat.mtime().tv_nsec();
+  }
+  stbuf->st_uid = getuid();
+  stbuf->st_gid = getgid();
+  stbuf->st_blksize = kBlockSize; 
+}
+
 int fs_getattr(const char* path, struct stat* stbuf) {
   struct Context* context =
     static_cast<struct Context*>(fuse_get_context()->private_data);
@@ -50,19 +66,7 @@ int fs_getattr(const char* path, struct stat* stbuf) {
   if (rpc.Failed()) {
     return -ENOENT;
   }
-  stbuf->st_size = response.stat().size();
-  stbuf->st_blocks = response.stat().blocks();
-  stbuf->st_mode = response.stat().mode();
-  if (response.stat().has_nlink()) {
-    stbuf->st_nlink = response.stat().nlink();
-  }
-  if (response.stat().has_mtime()) {
-    stbuf->st_mtimespec.tv_sec = response.stat().mtime().tv_sec();
-    stbuf->st_mtimespec.tv_nsec = response.stat().mtime().tv_nsec();
-  }
-  stbuf->st_uid = getuid();
-  stbuf->st_gid = getgid();
-  stbuf->st_blksize = kBlockSize; 
+  fill_stat(response.stat(), stbuf);
   return 0; 
 }
 
@@ -80,7 +84,16 @@ int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     return -ENOENT;
   }
   for (int i = 0; i < response.entry_size(); ++i) {
-    filler(buf, response.entry(i).filename().c_str(), NULL, 0);
+    const proto::ReadDirResponse::Entry& entry = response.entry(i);
+    struct stat stbuf;
+    struct stat* stbuf_ptr = NULL;
+    if (entry.has_stat()) {
+      fill_stat(entry.stat(), &stbuf);
+      stbuf_ptr = &stbuf;
+    }
+    if (filler(buf, entry.filename().c_str(), stbuf_ptr, 0) != 0) {
+      return -ENOENT;
+    }
   }
   return 0; 
 }

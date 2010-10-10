@@ -38,7 +38,7 @@ class MobileFsService : public proto::FsService {
           !info_map.count("st_blocks")) {
         rpc->SetFailed("AFCFileInfoOpen: Mising keys");
       } else {
-        proto::GetAttrResponse::Stat* stat = response->mutable_stat();
+        proto::Stat* stat = response->mutable_stat();
         stat->set_size(atol(info_map["st_size"].c_str()));
         stat->set_blocks(atol(info_map["st_blocks"].c_str()));
         if (info_map.count("st_nlink")) {
@@ -258,9 +258,10 @@ class MobileFsService : public proto::FsService {
           info_map.find("Model") == info_map.end()) {
         rpc->SetFailed("AFCDeviceInfoOpen: Mising keys");
       } else {
-        proto::StatFsResponse::Stat* stat = response->mutable_stat();
+        proto::StatFsResponse::StatFs* stat = response->mutable_stat();
         int block_size = atoi(info_map["FSBlockSize"].c_str());
-        unsigned long long total_bytes = atoll(info_map["FSTotalBytes"].c_str());
+        unsigned long long total_bytes =
+            atoll(info_map["FSTotalBytes"].c_str());
         unsigned long long free_bytes = atoll(info_map["FSFreeBytes"].c_str());
         stat->set_bsize(block_size);
         stat->set_frsize(block_size);
