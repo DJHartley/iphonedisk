@@ -11,11 +11,9 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include "proto/fs_service.pb.h"
-#include "rpc/mach_service.h"
 
 using ::google::protobuf::Closure;
 using ::google::protobuf::RpcController;
-using ::rpc::ExportService;
 
 namespace test {
 

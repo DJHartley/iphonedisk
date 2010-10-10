@@ -12,8 +12,8 @@ if mode == 'debug':
 proto = SConscript('proto/SConscript')
 Export('proto')
 
-[ rpc, rpc_channel, rpc_service ] = SConscript('rpc/SConscript')
-Export('rpc', 'rpc_channel', 'rpc_service')
+rpc = SConscript('rpc/SConscript')
+Export('rpc')
 
 fs = SConscript('fs/SConscript')
 Export('fs')
