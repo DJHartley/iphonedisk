@@ -30,10 +30,13 @@ class LoopbackService : public proto::FsService {
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
     } else {
-      response->mutable_stat()->set_size(stbuf.st_size);
-      response->mutable_stat()->set_blocks(stbuf.st_blocks);
-      response->mutable_stat()->set_mode(stbuf.st_mode);
-      response->mutable_stat()->set_nlink(stbuf.st_nlink);
+      proto::Stat* stat = response->mutable_stat();
+      stat->set_size(stbuf.st_size);
+      stat->set_blocks(stbuf.st_blocks);
+      stat->set_mode(stbuf.st_mode);
+      stat->set_nlink(stbuf.st_nlink);
+      stat->mutable_mtime()->set_tv_sec(stbuf.st_mtimespec.tv_sec);
+      stat->mutable_mtime()->set_tv_nsec(stbuf.st_mtimespec.tv_nsec);
     }
     done->Run();
   }
