@@ -8,25 +8,6 @@ This package contains a re-write of the original iphonedisk.  The original was
 plagued with bugs that were difficult to track down due to the nature of its
 design, and this rewrite is an attempt to fix that.
 
-In order to make the system simpler, its split into more moving parts (oops),
-with the goal to have fewer lines of code running inside of MacFUSE.  The
-different components expose a protocol buffer RPC service which uses Mach IPC
-via MIG as the communication channel.  Using Mach IPC is perhaps overkill,
-as domain sockets could be used instead, however it seemed fun to try.  One
-advantage over domain sockets is that by using the MIG layer, it does all of
-the message parsing for you.
-
-Components:
-
-FsService - Exports a protocol buffer RPC service for all filesystem commands.
-The interface looks a lot like the FUSE API.
-
-MountService - Exports a protocol buffer RPC service that actually mounts a
-fuse volume.  The MountService typically has a FsService channel that it uses to
-proxy all of the fuse API calls.
-
-Current Status:
-
 The current shipping iphonedisk again runs as a single process, mobile_fs_util,
 however contains now GUI.  mobile_fs_util runs as a launch agent that waits
 for an iphone USB connection.  The installer package places the launch agent
@@ -34,3 +15,8 @@ in /Library/iphonedisk and a .plist file in /Library/Launch Agents/.  The .plist
 file has configuration parameters such as the volume icon and volume name used
 when the disk is mounted.  You must reload the agent (or your computer) any
 time the configuration parameter are changed.
+
+This project uses protocol buffer services as an API between components, but
+doesn't actually send any RPCs.  Originally it was going to (to provide some
+isolation between components), but in the end it seemed simpler to just put
+everything in a single process.
