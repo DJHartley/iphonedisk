@@ -26,7 +26,7 @@ class LoopbackService : public proto::FsService {
                proto::GetAttrResponse* response,
                Closure* done) {
     struct stat stbuf;
-    int res = stat(request->path().c_str(), &stbuf);
+    int res = lstat(request->path().c_str(), &stbuf);
     if (res == -1) {
       rpc->SetFailed(strerror(errno));
     } else {
@@ -37,6 +37,21 @@ class LoopbackService : public proto::FsService {
       stat->set_nlink(stbuf.st_nlink);
       stat->mutable_mtime()->set_tv_sec(stbuf.st_mtimespec.tv_sec);
       stat->mutable_mtime()->set_tv_nsec(stbuf.st_mtimespec.tv_nsec);
+    }
+    done->Run();
+  }
+
+  void ReadLink(RpcController* rpc,
+                const proto::ReadLinkRequest* request,
+                proto::ReadLinkResponse* response,
+                Closure* done) {
+    char destination[BUFSIZ];
+    ssize_t n = readlink(request->path().c_str(), destination, BUFSIZ);
+    if (n == -1) {
+      rpc->SetFailed(strerror(errno));
+    } else {
+      destination[n] = '\0';
+      response->set_destination(destination);
     }
     done->Run();
   }
