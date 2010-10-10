@@ -4,7 +4,7 @@ iphonedisk2
 iphonedisk is a MacFUSE based filesystem that lets you access the contents of
 your iphone or ipod via USB.
 
-This package contains a re-write of the original iphoendisk.  The original was
+This package contains a re-write of the original iphonedisk.  The original was
 plagued with bugs that were difficult to track down due to the nature of its
 design, and this rewrite is an attempt to fix that.
 
