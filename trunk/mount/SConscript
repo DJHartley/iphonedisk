@@ -11,7 +11,7 @@ mount = env.Library('mount', [ 'mount_service.cc' ])
 mount_server = env.Program('mount_server',
                            [ 'mount_server.cc' ],
                            LIBS = [ proto, rpc, rpc_channel, rpc_service, fs,
-                                    'protobuf', 'fuse', mount ])
+                                    'protobuf', 'fuse_ino64', mount ])
 Depends(mount_server, [ proto, fs, rpc_channel, rpc_service ])
 
 mount_util = env.Program('mount_util',
