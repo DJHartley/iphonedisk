@@ -86,6 +86,19 @@ int fs_readlink(const char* path, char *buf, size_t bufsize) {
   return 0; 
 }
 
+int fs_symlink(const char* source, const char* target) {
+  struct Context* context =
+    static_cast<struct Context*>(fuse_get_context()->private_data);
+  rpc::Rpc rpc;
+  proto::SymLinkRequest request;
+  proto::SymLinkResponse response;
+  request.mutable_header()->set_fs_id(context->fs_id);
+  request.set_source(source);
+  request.set_target(target);
+  context->service->SymLink(&rpc, &request, &response, g_null_callback);
+  return rpc.Failed() ? -ENOENT : 0;
+}
+
 int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi) {
   struct Context* context =
@@ -285,6 +298,7 @@ void InitFuseOps(struct fuse_operations* fuse_op) {
   fuse_op->destroy  = fs_destroy;
   fuse_op->getattr  = fs_getattr;
   fuse_op->readlink = fs_readlink;
+  fuse_op->symlink  = fs_symlink;
   fuse_op->readdir  = fs_readdir;
   fuse_op->open     = fs_open;
   fuse_op->create   = fs_create;

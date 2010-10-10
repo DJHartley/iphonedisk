@@ -111,12 +111,8 @@ extern "C" {
     unsigned int unknown2;      /* 32 - reference counter, increased by AMDeviceRetain, decreased by AMDeviceRelease*/
     unsigned int lockdown_conn; /* 36 */
     unsigned char unknown3[8];  /* 40 */
-#if (__ITUNES_VER > 740)
     unsigned int unknown4;      /* 48 - used to store CriticalSection Handle*/
-#endif
-#if (__ITUNES_VER >= 800)
     unsigned char unknown5[24];  /* 52 */
-#endif
   } __PACK;
   
   struct am_device_notification {
@@ -394,7 +390,6 @@ extern "C" {
   afc_error_t AFCRenamePath(afc_connection *conn, const char *oldpath,
                  const char *newpath);
 
-#if (__ITUNES_VER >= 800)
   /* Creates symbolic or hard link
          * linktype - int64: 1 means hard link, 2 - soft (symbolic) link
          * target - absolute or relative path to link target
@@ -403,7 +398,6 @@ extern "C" {
   afc_error_t AFCLinkPath(struct afc_connection *conn, long long int linktype, const char *target, 
                                               const char *linkname);
 
-#endif
   /* Opens file for reading or writing without locking it in any way. afc_file_ref should not be shared between threads - 
          * opening file in one thread and closing it in another will lead to possible crash.
    * path - UTF-8 encoded absolute path to file

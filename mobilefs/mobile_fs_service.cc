@@ -51,6 +51,8 @@ class MobileFsService : public proto::FsService {
         }
         if (info_map["st_ifmt"] == "S_IFDIR") {
           stat->set_mode(S_IFDIR);
+        } else if (info_map["st_ifmt"] == "S_IFLNK") {
+          stat->set_mode(S_IFLNK);
         } else if (info_map["st_ifmt"] == "S_IFREG") {
           stat->set_mode(S_IFREG);
         } else if (info_map["st_ifmt"] == "S_IFSOCK") {
@@ -74,6 +76,40 @@ class MobileFsService : public proto::FsService {
           stat->set_mode(stat->mode() | 0644);
         }
       }
+    }
+    done->Run();
+  }
+
+  void ReadLink(RpcController* rpc,
+                const proto::ReadLinkRequest* request,
+                proto::ReadLinkResponse* response,
+                Closure* done) {
+    struct afc_dictionary *info;
+    if (AFCFileInfoOpen(conn_, (char*)request->path().c_str(),
+                        &info) != MDERR_OK) {
+      rpc->SetFailed("AFCFileInfoOpen failed");
+    } else {
+      std::map<std::string, std::string> info_map;
+      CreateMap(info, &info_map);
+      AFCKeyValueClose(info);
+      if (!info_map.count("LinkTarget")) {
+        rpc->SetFailed("AFCFileInfoOpen: Not a link");
+      } else {
+        response->set_destination(info_map["LinkTarget"]);
+      }
+    }
+    done->Run();
+  }
+
+  void SymLink(RpcController* rpc,
+               const proto::SymLinkRequest* request,
+               proto::SymLinkResponse* response,
+               Closure* done) {
+    int ret = AFCLinkPath(conn_, /* soft */ 2,
+                          request->source().c_str(),
+request->target().c_str());
+    if (ret != MDERR_OK) {
+      rpc->SetFailed("AFCLinkPath failed");
     }
     done->Run();
   }
@@ -278,6 +314,7 @@ class MobileFsService : public proto::FsService {
                         std::map<std::string, std::string>* out) {
     char *key, *val;
     while ((AFCKeyValueRead(in, &key, &val) == MDERR_OK) && key && val) {
+printf("%s => %s\n", key, val);
       (*out)[key] = val;
     }
   }
