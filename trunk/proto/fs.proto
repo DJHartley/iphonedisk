@@ -36,6 +36,15 @@ message ReadLinkResponse {
   optional string destination = 1;
 }
 
+message SymLinkRequest {
+  required Header header = 1;
+  required string source = 2;
+  required string target = 3;
+}
+
+message SymLinkResponse {
+}
+
 message ReadDirRequest {
   required Header header = 1;
   required string path = 2;
@@ -44,7 +53,6 @@ message ReadDirRequest {
 message ReadDirResponse {
   message Entry {
     required string filename = 1;
-    optional Stat stat = 2;
   }
   repeated Entry entry = 1;
 }

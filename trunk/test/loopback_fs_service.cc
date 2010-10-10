@@ -56,6 +56,17 @@ class LoopbackService : public proto::FsService {
     done->Run();
   }
 
+  void SymLink(RpcController* rpc,
+               const proto::SymLinkRequest* request,
+               proto::SymLinkResponse* response,
+               Closure* done) {
+    int ret = symlink(request->source().c_str(), request->target().c_str());
+    if (ret == -1) {
+      rpc->SetFailed(strerror(errno));
+    }
+    done->Run();
+  }
+
   void ReadDir(RpcController* rpc,
                const proto::ReadDirRequest* request,
                proto::ReadDirResponse* response,
