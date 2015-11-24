@@ -1,0 +1,1 @@
+Since MacFUSE no longer supports Lion, this project has come to an end.  No new issues will be fixed, and there will be no new releases, but the source tree is still available if you are interested.
